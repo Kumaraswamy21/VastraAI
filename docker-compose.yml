@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: fashion-search-postgres
+    environment:
+      POSTGRES_USER: fashion
+      POSTGRES_PASSWORD: fashion
+      POSTGRES_DB: fashion_search
+    ports:
+      - "5432:5432"
+    volumes:
+      - fashion_search_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fashion -d fashion_search"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  fashion_search_pgdata:
