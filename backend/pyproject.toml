@@ -8,9 +8,14 @@ dependencies = [
   "uvicorn[standard]>=0.32.0",
   "pydantic-settings>=2.6.0",
   "sqlalchemy>=2.0.36",
+  "alembic>=1.14.0",
   "pgvector>=0.3.6",
   "psycopg[binary]>=3.2.0",
 ]
+
+[project.scripts]
+seed-catalog = "fashion_search.catalog.seed:main"
+verify-catalog = "fashion_search.catalog.verify:main"
 
 [build-system]
 requires = ["hatchling"]

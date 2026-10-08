@@ -1,6 +1,6 @@
 """PostgreSQL full-text search over catalog text fields.
 
-Day 3 will use `tsvector` / `plainto_tsquery` on title, brand, and description.
+Day 3 will use `tsvector` / `plainto_tsquery` on title and description.
 """
 
 from fashion_search.catalog.schemas import ProductFilters, ProductRecord

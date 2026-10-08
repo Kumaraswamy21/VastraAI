@@ -5,7 +5,6 @@ Return only fields you can justify from the text:
 - category
 - occasion
 - max_price_inr (integer, Indian rupees)
-- brand
 - query_text (normalized search phrase)
 
 Leave a field empty when it is not stated. Do not guess a budget.

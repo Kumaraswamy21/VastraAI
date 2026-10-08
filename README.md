@@ -2,7 +2,7 @@
 
 A production-style conversational shopping assistant. A customer describes an outfit or product in natural language and receives ranked catalog results as clickable links. The assistant can ask a clarifying question, or accept extra detail the customer adds on their own. It only answers fashion-catalog questions.
 
-Day 1 is a scaffold: folder structure, documented contracts, a FastAPI health check, and a Next.js placeholder page. Search and generation are not implemented yet.
+The stack runs end to end against hosted Neon PostgreSQL. Search and generation are not implemented yet.
 
 ## Target user
 
@@ -92,14 +92,25 @@ Backend packages live under `backend/src/fashion_search/`: `api`, `catalog`, `se
 | Phase | Focus |
 | --- | --- |
 | **Day 1** | This scaffold: packages, README, health check, placeholder UI. No search or generation logic. |
-| **Day 2** | Postgres + pgvector, catalog models/migrations, synthetic seed catalog. |
+| **Day 2** | Neon connectivity, Compose for API + UI, catalog models/migrations, synthetic seed catalog. |
 | **Day 3** | Embeddings, keyword + vector retrieval, hybrid ranking, search API. |
 | **Day 4** | Conversational session, filter extraction, clarification turns, domain lock-in, Gemini/Ollama generation. |
 | **Day 5** | UI for chat + product links, ranking polish, error paths, review against success measures. |
 
-## Local run (Day 1)
+## Local run
 
-Database is not required until Day 2. Compose is included so the target store is documented.
+Catalog data lives in **Neon** (PostgreSQL + pgvector). Docker Compose runs only the backend and frontend containers — not Postgres.
+
+```bash
+cp .env.example .env
+# Set DATABASE_URL to your Neon connection string (sslmode=require).
+docker compose up --build
+```
+
+- API health: http://localhost:8000/health (backend + Neon ping)
+- UI: http://localhost:3000 (shows backend and Neon status)
+
+Without Docker:
 
 ```bash
 # API
@@ -115,8 +126,8 @@ npm install
 npm run dev
 ```
 
-- API health: http://localhost:8000/health
-- UI: http://localhost:3000
-- Optional Postgres: `docker compose up -d` from the repo root.
+Enable the vector extension on Neon before retrieval depends on it:
 
-Copy `.env.example` to `backend/.env` when you start wiring config.
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```

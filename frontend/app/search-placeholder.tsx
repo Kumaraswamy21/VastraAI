@@ -39,8 +39,8 @@ export function SearchPlaceholder() {
         </button>
 
         <p className="text-sm text-zinc-500">
-          Day 1 scaffold: retrieval and generation are not wired yet. Search
-          stays disabled until Day 3–4.
+          Retrieval and generation are not wired yet. Search stays disabled
+          until Day 3–4.
         </p>
       </main>
     </div>
