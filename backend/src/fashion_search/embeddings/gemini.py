@@ -85,6 +85,14 @@ class GeminiEmbedder:
         """Embed one string via Gemini."""
         return self.embed_texts([text], task_type=task_type)[0]
 
+    def embed_query(self, query: str) -> list[float]:
+        """Embed a natural-language search query with RETRIEVAL_QUERY."""
+        return self.embed_text(query, task_type=TASK_QUERY)
+
+    def embed_document(self, text: str) -> list[float]:
+        """Embed catalog document text with RETRIEVAL_DOCUMENT."""
+        return self.embed_text(text, task_type=TASK_DOCUMENT)
+
     def embed_texts(
         self,
         texts: list[str],

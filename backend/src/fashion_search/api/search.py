@@ -1,9 +1,11 @@
-"""Catalog search HTTP API. Retrieval is not implemented on Day 1."""
+"""Catalog search HTTP API."""
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from fashion_search.catalog.schemas import ProductFilters, ProductRecord
+from fashion_search.search.schemas import SemanticSearchRequest, SemanticSearchResponse
+from fashion_search.search.semantic import SemanticSearchError, semantic_search
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -25,8 +27,17 @@ class SearchResponse(BaseModel):
 
 @router.post("", response_model=SearchResponse)
 def search_catalog(_body: SearchRequest) -> SearchResponse:
-    """Run hybrid catalog search. Day 3 implements retrieval."""
+    """Hybrid catalog search (keyword + vector). Not implemented yet."""
     raise HTTPException(
         status_code=501,
-        detail="Search is not implemented on Day 1.",
+        detail="Hybrid search is not implemented yet. Use POST /search/semantic.",
     )
+
+
+@router.post("/semantic", response_model=SemanticSearchResponse)
+def search_semantic(body: SemanticSearchRequest) -> SemanticSearchResponse:
+    """Rank products by Gemini query embedding + pgvector cosine similarity."""
+    try:
+        return semantic_search(body)
+    except SemanticSearchError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc

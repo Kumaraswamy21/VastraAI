@@ -2,7 +2,7 @@
 
 A production-style conversational shopping assistant. A customer describes an outfit or product in natural language and receives ranked catalog results as clickable links. The assistant can ask a clarifying question, or accept extra detail the customer adds on their own. It only answers fashion-catalog questions.
 
-The stack runs end to end against hosted Neon PostgreSQL. Catalog browsing and Gemini product embeddings are available. Keyword/vector search and generation are not implemented yet.
+The stack runs end to end against hosted Neon PostgreSQL. Catalog browsing, Gemini product embeddings, and pgvector semantic search are available. Hybrid keyword + vector ranking is not implemented yet.
 
 ## Target user
 
@@ -92,7 +92,7 @@ Backend packages live under `backend/src/fashion_search/`: `api`, `catalog`, `se
 | --- | --- |
 | **Day 1** | Scaffold: packages, README, health check, placeholder UI. |
 | **Day 2** | Neon connectivity, Compose for API + UI, catalog models/migrations, synthetic seed catalog, browse UI. |
-| **Day 3** | Gemini product embeddings (done). Next: keyword + vector retrieval, hybrid ranking, search API. |
+| **Day 3** | Gemini embeddings + pgvector cosine semantic search (done). Next: hybrid ranking / keyword search. |
 | **Day 4** | Conversational session, filter extraction, clarification turns, domain lock-in, Gemini/Ollama generation. |
 | **Day 5** | UI for chat + product links, ranking polish, error paths, review against success measures. |
 
@@ -110,6 +110,7 @@ docker compose up --build
 - Catalog: http://localhost:3000/catalog
 - Product API: http://localhost:8000/products
 - Embeddings CLI: `embed-catalog` (see [Product embeddings](#product-embeddings-gemini))
+- Semantic search: `POST /search/semantic` (see [Semantic search](#semantic-search-pgvector))
 
 Without Docker:
 
@@ -177,7 +178,7 @@ alembic upgrade head
 4. Mark **PROCESSING**, call Gemini `embed_content` with `task_type=RETRIEVAL_DOCUMENT` and `output_dimensionality=768`, L2-normalize the vector, then persist on `products`.
 5. Mark **COMPLETED** or **FAILED** (with `embedding_error`). Stale PROCESSING rows older than `EMBEDDING_STALE_PROCESSING_MINUTES` are recovered as FAILED and retried on the next run.
 
-Vector indexing / similarity search is **not** implemented in this milestone; generation status is tracked independently of any future index.
+Vectors are stored on `products.embedding` (`vector(768)`). Generation status is tracked on the same row. Approximate ANN indexes (HNSW) are **not** used yet — the ~750-product catalog uses exact cosine distance (`<=>`).
 
 ### CLI
 
@@ -227,4 +228,94 @@ Example metadata columns after a successful run:
 | embedding_dimensions | 768 |
 | embedding_status | COMPLETED |
 | embedding_text_hash | 64-char SHA-256 hex |
+
+## Semantic search (pgvector)
+
+Natural-language queries are embedded with Gemini (`RETRIEVAL_QUERY`) and ranked against stored product vectors (`RETRIEVAL_DOCUMENT`) using **cosine similarity**:
+
+```text
+similarity = 1 - (embedding <=> query_embedding)
+```
+
+Only rows with `embedding_status = COMPLETED`, `embedding_provider = gemini`, and matching `embedding_model` / `embedding_dimensions` are searched.
+
+### Prerequisites
+
+1. `CREATE EXTENSION IF NOT EXISTS vector;` (applied by Alembic migration `20261007_0001`).
+2. `alembic upgrade head`
+3. Generate product embeddings: `embed-catalog` (needs `GEMINI_API_KEY`)
+4. Confirm coverage:
+
+```sql
+SELECT count(*) FILTER (WHERE embedding_status = 'COMPLETED' AND embedding IS NOT NULL) AS ready,
+       count(*) AS total
+FROM products;
+```
+
+### Endpoint
+
+`POST /search/semantic`
+
+Request:
+
+```json
+{
+  "query": "red cotton shirt for men",
+  "limit": 10
+}
+```
+
+Response (scores are illustrative):
+
+```json
+{
+  "query": "red cotton shirt for men",
+  "total": 2,
+  "embedding_model": "gemini-embedding-001",
+  "embedding_dimensions": 768,
+  "results": [
+    {
+      "product_id": 123,
+      "title": "Heritage Red Slim Fit Shirt",
+      "category": "shirt",
+      "color": "red",
+      "material": "cotton",
+      "style": "slim fit",
+      "gender": "men",
+      "occasion": "casual",
+      "price_inr": 1299,
+      "currency": "INR",
+      "image_reference": "catalog/....webp",
+      "product_url": "/products/heritage-red-slim-fit-shirt-0123",
+      "similarity_score": 0.92
+    }
+  ]
+}
+```
+
+Raw embedding vectors and internal hash/error fields are never returned.
+
+### Indexing decision
+
+| Catalog size | Strategy |
+| --- | --- |
+| Current (~750) | Exact cosine order (`ORDER BY embedding <=> query`) — no HNSW |
+| Larger catalogs later | Consider `USING hnsw (embedding vector_cosine_ops)` after measuring latency |
+
+### Tests
+
+```bash
+cd backend
+source .venv/bin/activate
+python -m unittest discover -s tests -v
+```
+
+Unit tests mock Gemini. DB integration tests inject deterministic vectors and do not call the live Gemini API.
+
+### Known limitations
+
+- Hybrid keyword + vector ranking is not implemented (`POST /search` remains 501).
+- Results depend on products having COMPLETED Gemini embeddings.
+- No result caching layer.
+- No structured filter merge on the semantic endpoint yet (browse filters remain on `GET /products`).
 
