@@ -4,7 +4,13 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from fashion_search.catalog.schemas import ProductFilters, ProductRecord
-from fashion_search.search.schemas import SemanticSearchRequest, SemanticSearchResponse
+from fashion_search.search.constraints import parse_constraints
+from fashion_search.search.schemas import (
+    ConstraintParseRequest,
+    ConstraintParseResponse,
+    SemanticSearchRequest,
+    SemanticSearchResponse,
+)
 from fashion_search.search.semantic import SemanticSearchError, semantic_search
 
 router = APIRouter(prefix="/search", tags=["search"])
@@ -41,3 +47,9 @@ def search_semantic(body: SemanticSearchRequest) -> SemanticSearchResponse:
         return semantic_search(body)
     except SemanticSearchError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+
+@router.post("/parse", response_model=ConstraintParseResponse)
+def parse_search_constraints(body: ConstraintParseRequest) -> ConstraintParseResponse:
+    """Extract query constraints without applying them to retrieval."""
+    return parse_constraints(body.query)

@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,6 +26,11 @@ class Settings(BaseSettings):
     embedding_batch_size: int = 16
     embedding_max_retries: int = 3
     embedding_stale_processing_minutes: int = 30
+    search_parser_model: str = Field(default="gemini-2.5-flash-lite", min_length=1)
+    search_parser_temperature: float = Field(default=0.0, ge=0, le=2)
+    search_parser_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
+    search_parser_max_retries: int = Field(default=1, ge=0, le=3)
+    market_currency: str = Field(default="INR", pattern=r"^[A-Za-z]{3}$")
     cors_origins: str = "http://localhost:3000"
     log_level: str = "INFO"
 

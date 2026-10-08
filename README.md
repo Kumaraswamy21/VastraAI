@@ -111,6 +111,7 @@ docker compose up --build
 - Product API: http://localhost:8000/products
 - Embeddings CLI: `embed-catalog` (see [Product embeddings](#product-embeddings-gemini))
 - Semantic search: `POST /search/semantic` (see [Semantic search](#semantic-search-pgvector))
+- Constraint parsing: `POST /search/parse` (see [Fashion constraint extraction](#fashion-constraint-extraction))
 
 Without Docker:
 
@@ -319,3 +320,111 @@ Unit tests mock Gemini. DB integration tests inject deterministic vectors and do
 - No result caching layer.
 - No structured filter merge on the semantic endpoint yet (browse filters remain on `GET /products`).
 
+## Fashion constraint extraction
+
+`POST /search/parse` turns an English fashion query into validated constraints while
+preserving the original query. Constraint parsing and database filtering are separate:
+this endpoint does **not** apply the returned fields to semantic or catalog retrieval.
+
+### Architecture
+
+1. FastAPI validates a non-blank query of at most 500 characters.
+2. Gemini receives the versioned `system_query_parse` prompt and a Pydantic response
+   schema through `GenerateContentConfig(response_mime_type="application/json",
+   response_schema=FashionSearchConstraints)`.
+3. Pydantic rejects negative or inverted prices. Deterministic normalization maps only
+   supported metadata and aliases.
+4. A small regex parser replaces Gemini on API, timeout, JSON, or schema failure.
+5. Explicit deterministic price expressions are always compared with Gemini output and
+   win on disagreement. Logs contain query length, method, latency, and error type—not
+   query contents, provider responses, or credentials.
+
+The configured provider is Google Gemini only. The parser defaults to
+`gemini-2.5-flash-lite`, temperature `0`, a 10-second SDK HTTP timeout, and one bounded
+retry for transient failures. A valid Gemini result containing all null fields remains a
+Gemini success.
+
+### Schema and normalization
+
+`FashionSearchConstraints` contains `category`, `color`, `occasion`, `size`, `gender`,
+`price_min`, `price_max`, `currency`, `price_min_inclusive`, and
+`price_max_inclusive`. Prices use `Decimal` to avoid binary floating-point errors.
+Currency defaults from `MARKET_CURRENCY` (`INR` for this catalog). Missing fields stay
+null, and gender is never inferred from category.
+
+Canonical categories, occasions, sizes, and genders come from the catalog generator.
+Examples include `tees -> t-shirt`, `kurti -> kurta`, `trainers/sneakers -> footwear`,
+`navy -> navy blue`, `male -> men`, and `female -> women`. Search colors also include
+the acceptance vocabulary `red`, `blue`, and `gray`; these may have no matches in the
+current deterministic seed palette. Unsupported values are left null, while the
+unaltered query remains available to semantic retrieval.
+
+The fallback recognizes complete words/phrases for catalog categories, colors,
+occasions, explicit genders, and sizes introduced by `size`. This prevents a bare number
+such as `32` from being treated as either price or size without context. It supports:
+
+- `under`/`below`/`less than` as a strict maximum
+- `up to`/`at most` as an inclusive maximum
+- `above`/`over`/`more than` as a strict minimum
+- `at least` as an inclusive minimum
+- `between … and …` and `from … to …` as inclusive ranges
+- `₹`, `Rs.`, `INR`, rupees, commas, decimals, and `k`
+
+Approximate prices such as “around ₹2000” do not become arbitrary hard bounds.
+Negative, reversed, or multiple conflicting bounds are safely discarded. The fallback
+is intentionally narrow; typo recovery beyond structured catalog terms is left to
+semantic search and Gemini.
+
+### API example
+
+```http
+POST /search/parse
+Content-Type: application/json
+
+{"query":"black dress under ₹4000 for wedding"}
+```
+
+```json
+{
+  "query": "black dress under ₹4000 for wedding",
+  "constraints": {
+    "category": "dress",
+    "color": "black",
+    "occasion": "wedding",
+    "size": null,
+    "gender": null,
+    "price_min": null,
+    "price_max": "4000",
+    "currency": "INR",
+    "price_min_inclusive": null,
+    "price_max_inclusive": false
+  },
+  "extraction_method": "gemini"
+}
+```
+
+Depending on the Pydantic/FastAPI JSON encoder version, `Decimal` values may be emitted
+as JSON numbers rather than strings; clients should accept either exact representation.
+
+### Configuration and tests
+
+```bash
+SEARCH_PARSER_MODEL=gemini-2.5-flash-lite
+SEARCH_PARSER_TEMPERATURE=0
+SEARCH_PARSER_TIMEOUT_SECONDS=10
+SEARCH_PARSER_MAX_RETRIES=1
+MARKET_CURRENCY=INR
+
+cd backend
+source .venv/bin/activate
+python -m unittest tests/test_constraint_extraction.py -v
+python -m unittest discover -s tests -v
+
+# Optional and billable; standard tests always mock Gemini.
+RUN_GEMINI_INTEGRATION=1 python -m unittest \
+  tests.test_constraint_extraction.LiveGeminiConstraintTests -v
+```
+
+Known limitations: English is the current MVP language; approximate budgets are not
+represented; unsupported terminology remains only in the semantic query; and parsed
+constraints are not yet translated into SQL filters or hybrid ranking.
