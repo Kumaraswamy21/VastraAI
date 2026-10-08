@@ -2,6 +2,16 @@
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
+from fashion_search.catalog.queries import ProductListQuery
+
+__all__ = [
+    "ProductCreate",
+    "ProductFilters",
+    "ProductListQuery",
+    "ProductListResponse",
+    "ProductRecord",
+]
+
 
 class ProductCreate(BaseModel):
     """Validated catalog row accepted by the deterministic seed loader."""
@@ -44,6 +54,16 @@ class ProductRecord(ProductCreate):
     def product_url(self) -> str:
         """Return the stable relative application URL for this catalog item."""
         return f"/products/{self.slug}"
+
+
+class ProductListResponse(BaseModel):
+    """Paginated catalog page for browsing."""
+
+    items: list[ProductRecord]
+    page: int
+    page_size: int
+    total_count: int
+    total_pages: int
 
 
 class ProductFilters(BaseModel):

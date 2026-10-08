@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function SearchPlaceholder() {
   return (
     <div className="flex min-h-full flex-1 flex-col bg-zinc-50">
@@ -8,6 +10,12 @@ export function SearchPlaceholder() {
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900">
           Describe the outfit. Review the links.
         </h1>
+        <Link
+          href="/catalog"
+          className="mt-3 inline-block text-sm font-medium text-zinc-700 underline"
+        >
+          Browse catalog
+        </Link>
       </header>
 
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-10">

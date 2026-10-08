@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from fashion_search.api.chat import router as chat_router
 from fashion_search.api.health import router as health_router
+from fashion_search.api.products import router as products_router
 from fashion_search.api.search import router as search_router
 from fashion_search.config.settings import get_settings
 from fashion_search.core.logging import configure_logging
@@ -27,6 +28,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(health_router)
+    app.include_router(products_router)
     app.include_router(search_router)
     app.include_router(chat_router)
     return app
