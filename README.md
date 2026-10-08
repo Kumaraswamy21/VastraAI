@@ -2,7 +2,7 @@
 
 A production-style conversational shopping assistant. A customer describes an outfit or product in natural language and receives ranked catalog results as clickable links. The assistant can ask a clarifying question, or accept extra detail the customer adds on their own. It only answers fashion-catalog questions.
 
-The stack runs end to end against hosted Neon PostgreSQL. Search and generation are not implemented yet.
+The stack runs end to end against hosted Neon PostgreSQL. Catalog browsing and Gemini product embeddings are available. Keyword/vector search and generation are not implemented yet.
 
 ## Target user
 
@@ -33,7 +33,7 @@ The assistant is a catalog shopper, not a general LLM.
 
 - Next.js frontend and FastAPI backend.
 - Single database: PostgreSQL with pgvector (vectors) and PostgreSQL full-text search (keywords).
-- Local Sentence Transformers embeddings, with a Gemini embedding provider behind the same interface.
+- Product embeddings via **Google Gemini only** (hosted API; no local model weights).
 - Response generation: Gemini when quota is available, Gemma via Ollama as the local fallback.
 - Versioned prompt files (not hardcoded strings).
 - Synthetic or openly licensed catalog; INR prices; placeholder product URLs.
@@ -47,7 +47,7 @@ The assistant is a catalog shopper, not a general LLM.
 - User accounts, personalization, or order history.
 - Image-to-search or visual similarity (later, if ever).
 - Multi-retailer aggregation or affiliate networks.
-- Implementing retrieval or generation on Day 1.
+- Local embedding models (Sentence Transformers, Hugging Face, Ollama embeddings).
 
 ## Success measures
 
@@ -66,9 +66,8 @@ flowchart TD
   api --> guard[Domain lock-in and query parse]
   guard --> searchPkg[Search package]
   searchPkg --> pg[(PostgreSQL plus pgvector)]
-  searchPkg --> embed[Embeddings providers]
-  embed --> st[Sentence Transformers local]
-  embed --> geminiEmbed[Gemini embeddings]
+  searchPkg --> embed[Gemini embeddings]
+  embed --> geminiApi[Google Gemini hosted API]
   guard --> gen[Generation providers]
   gen --> geminiGen[Gemini primary]
   gen --> ollama[Ollama Gemma fallback]
@@ -80,8 +79,8 @@ flowchart TD
 | UI | Next.js App Router |
 | API | FastAPI |
 | Catalog + keyword search | PostgreSQL |
-| Vector search | pgvector |
-| Embeddings | Sentence Transformers (local), Gemini (provider) |
+| Vector storage | pgvector on Neon |
+| Embeddings | Google Gemini (`gemini-embedding-001`, 768 dims) |
 | Generation | Gemini primary, Ollama Gemma fallback |
 | Prompts | Versioned files under `backend/src/fashion_search/prompts/versions/` |
 
@@ -91,9 +90,9 @@ Backend packages live under `backend/src/fashion_search/`: `api`, `catalog`, `se
 
 | Phase | Focus |
 | --- | --- |
-| **Day 1** | This scaffold: packages, README, health check, placeholder UI. No search or generation logic. |
-| **Day 2** | Neon connectivity, Compose for API + UI, catalog models/migrations, synthetic seed catalog. |
-| **Day 3** | Embeddings, keyword + vector retrieval, hybrid ranking, search API. |
+| **Day 1** | Scaffold: packages, README, health check, placeholder UI. |
+| **Day 2** | Neon connectivity, Compose for API + UI, catalog models/migrations, synthetic seed catalog, browse UI. |
+| **Day 3** | Gemini product embeddings (done). Next: keyword + vector retrieval, hybrid ranking, search API. |
 | **Day 4** | Conversational session, filter extraction, clarification turns, domain lock-in, Gemini/Ollama generation. |
 | **Day 5** | UI for chat + product links, ranking polish, error paths, review against success measures. |
 
@@ -103,13 +102,14 @@ Catalog data lives in **Neon** (PostgreSQL + pgvector). Docker Compose runs only
 
 ```bash
 cp .env.example .env
-# Set DATABASE_URL to your Neon connection string (sslmode=require).
+# Set DATABASE_URL (Neon, sslmode=require) and GEMINI_API_KEY for embeddings.
 docker compose up --build
 ```
 
 - API health: http://localhost:8000/health (backend + Neon ping)
 - Catalog: http://localhost:3000/catalog
 - Product API: http://localhost:8000/products
+- Embeddings CLI: `embed-catalog` (see [Product embeddings](#product-embeddings-gemini))
 
 Without Docker:
 
@@ -119,6 +119,7 @@ cd backend
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -e .
+alembic upgrade head
 uvicorn fashion_search.main:app --reload
 
 # UI (separate terminal)
@@ -127,7 +128,7 @@ npm install
 npm run dev
 ```
 
-Enable the vector extension on Neon before retrieval depends on it:
+Enable the vector extension on Neon before embeddings or retrieval depend on it:
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
