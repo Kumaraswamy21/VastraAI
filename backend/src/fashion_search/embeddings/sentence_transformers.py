@@ -1,25 +1,28 @@
-"""Local Sentence Transformers embedding provider.
+"""Local Sentence Transformers provider (disabled).
 
-Day 3 will load `EMBEDDING_MODEL` from disk or Hugging Face cache.
+This project uses Google Gemini embeddings exclusively. Local models are
+not installed or executed.
 """
 
-from fashion_search.embeddings.base import EmbeddingProvider
+from fashion_search.embeddings.errors import EmbeddingConfigError
 
 
 class SentenceTransformerEmbedder:
-    """On-device embeddings. Satisfies `EmbeddingProvider`."""
+    """Placeholder kept for import compatibility; always raises."""
 
     name = "sentence_transformers"
 
     def embed_text(self, text: str) -> list[float]:
-        """Embed one string using the local encoder."""
-        raise NotImplementedError("Local embeddings are scheduled for Day 3.")
+        raise EmbeddingConfigError(
+            "Local Sentence Transformers embeddings are disabled; use Gemini"
+        )
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
-        """Embed many strings using the local encoder."""
-        raise NotImplementedError("Local embeddings are scheduled for Day 3.")
+        raise EmbeddingConfigError(
+            "Local Sentence Transformers embeddings are disabled; use Gemini"
+        )
 
 
-def build_sentence_transformer_embedder() -> EmbeddingProvider:
-    """Factory for the default local embedding provider."""
+def build_sentence_transformer_embedder() -> SentenceTransformerEmbedder:
+    """Factory that returns a disabled local embedder."""
     return SentenceTransformerEmbedder()

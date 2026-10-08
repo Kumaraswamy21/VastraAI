@@ -16,10 +16,15 @@ class Settings(BaseSettings):
 
     database_url: str
     gemini_api_key: str = ""
+    google_api_key: str = ""
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "gemma2:9b"
-    embedding_provider: str = "sentence_transformers"
-    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_provider: str = "gemini"
+    embedding_model: str = "gemini-embedding-001"
+    embedding_dimensions: int = 768
+    embedding_batch_size: int = 16
+    embedding_max_retries: int = 3
+    embedding_stale_processing_minutes: int = 30
     cors_origins: str = "http://localhost:3000"
     log_level: str = "INFO"
 

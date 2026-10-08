@@ -1,9 +1,14 @@
 """SQLAlchemy catalog tables."""
 
+from datetime import datetime
+
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import CheckConstraint, Integer, String, Text
+from sqlalchemy import CheckConstraint, DateTime, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, TSVECTOR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+EMBEDDING_DIMENSIONS = 768
+EMBEDDING_STATUSES = ("PENDING", "PROCESSING", "COMPLETED", "FAILED")
 
 
 class Base(DeclarativeBase):
@@ -28,8 +33,15 @@ class Product(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     image_reference: Mapped[str] = mapped_column(String(512), nullable=False)
     slug: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
-    embedding: Mapped[list[float] | None] = mapped_column(Vector(384), nullable=True)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIMENSIONS), nullable=True)
     search_vector: Mapped[str | None] = mapped_column(TSVECTOR, nullable=True)
+    embedding_provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    embedding_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    embedding_dimensions: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    embedding_text_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    embedding_status: Mapped[str] = mapped_column(String(16), nullable=False, default="PENDING")
+    embedding_generated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    embedding_error: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     __table_args__ = (
         CheckConstraint("price_inr >= 100", name="ck_products_price_inr_positive"),
@@ -38,4 +50,8 @@ class Product(Base):
             name="ck_products_gender_allowed",
         ),
         CheckConstraint("cardinality(sizes) > 0", name="ck_products_sizes_nonempty"),
+        CheckConstraint(
+            "embedding_status IN ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED')",
+            name="ck_products_embedding_status",
+        ),
     )

@@ -108,7 +108,8 @@ docker compose up --build
 ```
 
 - API health: http://localhost:8000/health (backend + Neon ping)
-- UI: http://localhost:3000 (shows backend and Neon status)
+- Catalog: http://localhost:3000/catalog
+- Product API: http://localhost:8000/products
 
 Without Docker:
 
@@ -131,3 +132,98 @@ Enable the vector extension on Neon before retrieval depends on it:
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
+
+## Product embeddings (Gemini)
+
+Embeddings use **Google Gemini only** (`google-genai`). No Sentence Transformers, Hugging Face, or local model weights are downloaded or executed.
+
+### Dependencies
+
+Installed with the backend package:
+
+- `google-genai`
+- existing PostgreSQL + `pgvector` stack
+
+### Environment
+
+```bash
+# Required for live embedding runs
+GEMINI_API_KEY=...
+# Optional alias if GEMINI_API_KEY is empty
+GOOGLE_API_KEY=...
+
+EMBEDDING_PROVIDER=gemini
+EMBEDDING_MODEL=gemini-embedding-001
+EMBEDDING_DIMENSIONS=768
+EMBEDDING_BATCH_SIZE=16
+EMBEDDING_MAX_RETRIES=3
+EMBEDDING_STALE_PROCESSING_MINUTES=30
+```
+
+Apply the schema migration (widens `products.embedding` to 768 dims and adds state columns):
+
+```bash
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+```
+
+### How embeddings work
+
+1. **Normalize** catalog fields into deterministic text (title, category, color, material, style, occasion, gender, description). Price, sizes, IDs, and stock are excluded.
+2. **Hash** the normalized text with SHA-256.
+3. **Skip** products whose hash, model, dimensions, provider, and COMPLETED status already match.
+4. Mark **PROCESSING**, call Gemini `embed_content` with `task_type=RETRIEVAL_DOCUMENT` and `output_dimensionality=768`, L2-normalize the vector, then persist on `products`.
+5. Mark **COMPLETED** or **FAILED** (with `embedding_error`). Stale PROCESSING rows older than `EMBEDDING_STALE_PROCESSING_MINUTES` are recovered as FAILED and retried on the next run.
+
+Vector indexing / similarity search is **not** implemented in this milestone; generation status is tracked independently of any future index.
+
+### CLI
+
+```bash
+cd backend
+source .venv/bin/activate
+
+# Inspect only — no Gemini calls, no DB writes for embeddings
+embed-catalog --dry-run
+
+# Limit how many products are inspected
+embed-catalog --dry-run --limit 50
+
+# Generate / refresh embeddings
+embed-catalog
+embed-catalog --limit 100 --batch-size 16
+```
+
+Dry-run reports `inspected`, `required`, `skipped`, `failed` (eligible retry / empty text), and `embedded` (always 0).
+
+### Verify
+
+```bash
+# Unit tests mock Gemini; they do not consume API credits
+cd backend
+python -m unittest discover -s tests -v
+
+# After a live run, check Neon
+# SELECT id, embedding_status, embedding_model, embedding_dimensions,
+#        embedding_text_hash IS NOT NULL AS has_hash,
+#        embedding IS NOT NULL AS has_vector
+# FROM products ORDER BY id LIMIT 20;
+```
+
+Example normalized text:
+
+```text
+Classic Black Slim Fit Shirt. Category: shirt. Color: black. Material: cotton. Style: slim fit. Occasion: office. Gender: men. A slim fit shirt in black, made from cotton.
+```
+
+Example metadata columns after a successful run:
+
+| column | example |
+| --- | --- |
+| embedding_provider | gemini |
+| embedding_model | gemini-embedding-001 |
+| embedding_dimensions | 768 |
+| embedding_status | COMPLETED |
+| embedding_text_hash | 64-char SHA-256 hex |
+
