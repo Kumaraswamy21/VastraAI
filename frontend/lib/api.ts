@@ -43,6 +43,53 @@ export type CatalogQuery = {
   sort?: "newest" | "price_asc" | "price_desc";
 };
 
+export type HybridSearchScores = {
+  semantic_similarity: number | null;
+  keyword_rank_score: number | null;
+  semantic_rank: number | null;
+  keyword_rank: number | null;
+  hybrid_score: number;
+};
+
+export type HybridSearchResult = {
+  product_id: number;
+  title: string;
+  category: string;
+  color: string;
+  material: string;
+  style: string;
+  gender: string;
+  occasion: string;
+  sizes: string[];
+  price_inr: number;
+  currency: string;
+  image_reference: string;
+  product_url: string;
+  scores: HybridSearchScores;
+  match_quality: "strong" | "good" | "weak";
+  match_reason: string;
+  ranking: {
+    final_rank: number;
+    ranking_sources: ("semantic" | "keyword")[];
+    hybrid_score: number;
+  };
+};
+
+export type HybridSearchResponse = {
+  query: string;
+  retrieval_query: string;
+  filters: Record<string, unknown>;
+  total: number;
+  results: HybridSearchResult[];
+  search_status: string;
+  message?: string | null;
+  suggestions: string[];
+  search_mode: string;
+  semantic_search_available: boolean;
+  embedding_index_status: string;
+  metrics: Record<string, unknown>;
+};
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -59,9 +106,18 @@ export function apiBase(): string {
 
 export async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    throw new ApiError(response.status, `Request failed: ${response.status}`);
+    let message = `Request failed: ${response.status}`;
+    try {
+      const body = (await response.json()) as { detail?: unknown };
+      if (typeof body.detail === "string") {
+        message = body.detail;
+      }
+    } catch {
+      /* keep default message */
+    }
+    throw new ApiError(response.status, message);
   }
-  return response.json();
+  return response.json() as Promise<T>;
 }
 
 export async function fetchHealth(): Promise<HealthPayload> {
@@ -113,4 +169,19 @@ export async function fetchProduct(
   signal?: AbortSignal,
 ): Promise<Product> {
   return readJson(await fetch(`${apiBase()}/products/${slug}`, { signal }));
+}
+
+export async function fetchHybridSearch(
+  query: string,
+  limit = 12,
+  signal?: AbortSignal,
+): Promise<HybridSearchResponse> {
+  return readJson(
+    await fetch(`${apiBase()}/search/hybrid`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, limit }),
+      signal,
+    }),
+  );
 }
