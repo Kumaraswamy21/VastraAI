@@ -96,6 +96,40 @@ Backend packages live under `backend/src/fashion_search/`: `api`, `catalog`, `se
 | **Day 4** | Conversational session, filter extraction, clarification turns, domain lock-in, Gemini/Ollama generation. |
 | **Day 5** | UI for chat + product links, ranking polish, error paths, review against success measures. |
 
+## Explainable hybrid ranking
+
+Hybrid results preserve cosine similarity, PostgreSQL `ts_rank_cd`, both source
+ranks, weighted RRF score, final rank, retrieval sources, and exact constraints
+verified against structured product fields. RRF scores and cosine similarities
+are ranking signals, not probabilities or confidence percentages.
+
+Each result receives a deterministic `match_reason` and a configurable quality:
+
+- `strong`: all hard constraints match and either both retrieval channels have
+  meaningful evidence or semantic similarity reaches the strong threshold.
+- `good`: all hard constraints match and at least one configured semantic,
+  keyword, or dual-channel signal is present.
+- `weak`: retrieval evidence is below those thresholds. A hard-constraint
+  violation is always weak as a defensive measure, though SQL filtering should
+  prevent such a product from being returned.
+
+Thresholds are configured with `SEARCH_STRONG_SEMANTIC_THRESHOLD`,
+`SEARCH_WEAK_SEMANTIC_THRESHOLD`, and `SEARCH_MIN_KEYWORD_SIGNAL`. Explanations
+use parsed constraints, structured product metadata, and existing retrieval
+signals only; descriptions are never used to assert exact attributes and no
+explanation-time Gemini call is made.
+
+Empty constrained searches return `no_exact_matches` when aggregate counts prove
+the hard filters eliminated every product. If products satisfy the filters but
+neither retrieval channel returns them, the status is `no_relevant_matches`.
+If diagnostics are disabled or unavailable, the neutral `no_results` status is
+used rather than making an unsupported claim. Filters are never relaxed.
+Unsupported price currencies return `unsupported_constraints` instead of
+claiming that the catalog has no matching products.
+When enabled, one aggregate diagnostic query computes progressive and
+leave-one-filter-out counts and emits only suggestions supported by those
+counts. There are no per-result database queries.
+
 ## Local run
 
 Catalog data lives in **Neon** (PostgreSQL + pgvector). Docker Compose runs only the backend and frontend containers — not Postgres.
@@ -180,7 +214,67 @@ alembic upgrade head
 4. Mark **PROCESSING**, call Gemini `embed_content` with `task_type=RETRIEVAL_DOCUMENT` and `output_dimensionality=768`, L2-normalize the vector, then persist on `products`.
 5. Mark **COMPLETED** or **FAILED** (with `embedding_error`). Stale PROCESSING rows older than `EMBEDDING_STALE_PROCESSING_MINUTES` are recovered as FAILED and retried on the next run.
 
-Vectors are stored on `products.embedding` (`vector(768)`). Generation status is tracked on the same row. Approximate ANN indexes (HNSW) are **not** used yet — the ~750-product catalog uses exact cosine distance (`<=>`).
+Vectors are stored on `products.embedding` (unbounded `vector`; Gemini currently
+uses 768 dimensions). Generation status is tracked on the same row. Approximate
+ANN indexes (HNSW) are **not** used yet — the ~750-product catalog uses exact
+cosine distance (`<=>`).
+
+## AI provider architecture
+
+Generation and embeddings use separate application contracts. Provider selection
+is centralized in `fashion_search.ai.factory`; search, constraint parsing, and
+catalog indexing receive provider interfaces and do not select Gemini or Ollama.
+Both contracts have synchronous methods (matching the existing FastAPI and CLI
+services) plus `asyncio.to_thread` async wrappers for asynchronous callers.
+
+`GenerationProvider` exposes text generation, Pydantic-validated structured
+generation, model identity, and lightweight health. `EmbeddingProvider` exposes
+document batches, query embeddings, provider/model/dimension identity, and
+health. Provider-native errors are translated to application-level errors.
+
+Example configurations:
+
+```env
+# Gemini for both capabilities (default)
+GENERATION_PROVIDER=gemini
+EMBEDDING_PROVIDER=gemini
+
+# Local Ollama for both capabilities
+GENERATION_PROVIDER=ollama
+OLLAMA_GENERATION_MODEL=gemma2:9b
+EMBEDDING_PROVIDER=ollama
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+OLLAMA_EMBEDDING_DIMENSIONS=768
+
+# Local generation with the existing Gemini vector index
+GENERATION_PROVIDER=ollama
+EMBEDDING_PROVIDER=gemini
+
+# Optional generation-only failover
+GENERATION_PROVIDER=gemini
+GENERATION_FALLBACK_PROVIDER=ollama
+```
+
+Ollama must already be running and the configured models must already exist.
+The application never starts Ollama or downloads models.
+
+Embedding spaces are identified by provider, model, and dimensions. All three
+must match before pgvector search runs. Changing `EMBEDDING_PROVIDER`, its model,
+or dimensions makes an existing index incompatible; run `alembic upgrade head`
+and then `embed-catalog` to rebuild product vectors. The provider-agnostic
+schema uses unbounded `vector` storage so models may have different dimensions.
+Until a compatible index exists, hybrid search skips query embedding and safely
+returns keyword-filtered results with `search_mode=keyword_fallback`,
+`semantic_search_available=false`, and an explicit `embedding_index_status`.
+It never sends an Ollama query vector into a Gemini vector space.
+
+Provider tests use mocked HTTP/SDK clients and require neither live Gemini nor
+Ollama:
+
+```bash
+cd backend
+.venv/bin/python -m unittest tests.test_providers -v
+```
 
 ### CLI
 

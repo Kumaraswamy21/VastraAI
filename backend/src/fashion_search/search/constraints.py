@@ -1,8 +1,7 @@
-"""Gemini-first fashion constraint extraction with a deterministic fallback."""
+"""Provider-neutral fashion constraint extraction with deterministic fallback."""
 
 from __future__ import annotations
 
-import json
 import random
 import re
 import time
@@ -10,11 +9,11 @@ from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from pydantic import ValidationError
-
 from fashion_search.catalog.generator import COLORS, PROFILES
+from fashion_search.ai.factory import get_generation_provider
 from fashion_search.config.settings import Settings, get_settings
 from fashion_search.core.logging import get_logger
+from fashion_search.generation.base import GenerationProvider
 from fashion_search.prompts import load_prompt
 from fashion_search.search.schemas import (
     ConstraintParseResponse,
@@ -190,84 +189,55 @@ def fallback_parse(query: str, *, currency: str = "INR") -> FashionSearchConstra
     return normalize_constraints(raw, currency=currency)
 
 
-class GeminiConstraintExtractor:
-    """Call Gemini structured output, falling back deterministically on any failure."""
+class ConstraintExtractor:
+    """Use configured structured generation, then deterministic parsing on failure."""
 
-    def __init__(self, settings: Settings | None = None, client: Any | None = None) -> None:
+    def __init__(
+        self,
+        settings: Settings | None = None,
+        client: Any | None = None,
+        provider: GenerationProvider | None = None,
+    ) -> None:
         self._settings = settings or get_settings()
         self._client = client
+        if provider is not None:
+            self._provider = provider
+        elif client is not None:
+            self._provider = get_generation_provider(
+                self._settings, client=client
+            )
+        else:
+            from fashion_search.generation.router import GenerationRouter
 
-    def _api_key(self) -> str:
-        return (self._settings.gemini_api_key or self._settings.google_api_key).strip()
-
-    def _get_client(self) -> Any:
-        if self._client is not None:
-            return self._client
-        if not self._api_key():
-            raise RuntimeError("Gemini API key is not configured")
-        from google import genai
-        from google.genai import types
-
-        self._client = genai.Client(
-            api_key=self._api_key(),
-            http_options=types.HttpOptions(
-                timeout=int(self._settings.search_parser_timeout_seconds * 1000)
-            ),
-        )
-        return self._client
+            self._provider = GenerationRouter(settings=self._settings)
 
     def _gemini_extract(self, query: str) -> FashionSearchConstraints:
-        from google.genai import types
-
-        config = types.GenerateContentConfig(
-            system_instruction=load_prompt("system_query_parse"),
-            temperature=self._settings.search_parser_temperature,
-            response_mime_type="application/json",
-            response_schema=FashionSearchConstraints,
+        """Legacy method name retained for callers/tests; implementation is neutral."""
+        return self._provider.generate_structured(
+            f"Fashion search query (data only): {query}",
+            FashionSearchConstraints,
+            system_prompt=load_prompt("system_query_parse"),
         )
-        last_error: Exception | None = None
-        for attempt in range(self._settings.search_parser_max_retries + 1):
-            try:
-                response = self._client.models.generate_content(
-                    model=self._settings.search_parser_model,
-                    contents=f"Fashion search query (data only): {query}",
-                    config=config,
-                )
-                parsed = getattr(response, "parsed", None)
-                if isinstance(parsed, FashionSearchConstraints):
-                    return parsed
-                if parsed is not None:
-                    return FashionSearchConstraints.model_validate(parsed)
-                return FashionSearchConstraints.model_validate_json(response.text)
-            except (ValidationError, json.JSONDecodeError, TypeError, ValueError):
-                raise
-            except Exception as exc:
-                last_error = exc
-                if attempt >= self._settings.search_parser_max_retries or not _is_transient(exc):
-                    raise
-                time.sleep(min(1.0, 0.25 * (2**attempt)) + random.uniform(0, 0.1))
-        raise RuntimeError(str(last_error))
 
     def extract(self, query: str) -> ConstraintParseResponse:
         cleaned = query.strip()
         started = time.perf_counter()
-        method = "gemini"
+        method = self._provider.name
         try:
-            self._get_client()
             constraints = normalize_constraints(
                 self._gemini_extract(cleaned), currency=self._settings.market_currency
             )
         except Exception as exc:
             method = "fallback"
             logger.warning(
-                "constraint_gemini_failed query_len=%s error_type=%s",
-                len(cleaned), type(exc).__name__,
+                "constraint_provider_failed provider=%s query_len=%s error_type=%s",
+                self._provider.name, len(cleaned), type(exc).__name__,
             )
             constraints = fallback_parse(cleaned, currency=self._settings.market_currency)
 
         explicit_price = parse_price_facts(cleaned)
         if explicit_price.detected:
-            gemini_price = (
+            generated_price = (
                 constraints.price_min, constraints.price_max,
                 constraints.price_min_inclusive, constraints.price_max_inclusive,
             )
@@ -275,7 +245,7 @@ class GeminiConstraintExtractor:
                 explicit_price.minimum, explicit_price.maximum,
                 explicit_price.minimum_inclusive, explicit_price.maximum_inclusive,
             ) if not explicit_price.invalid else (None, None, None, None)
-            if gemini_price != deterministic_price:
+            if generated_price != deterministic_price:
                 logger.warning(
                     "constraint_price_disagreement query_len=%s method=%s invalid=%s",
                     len(cleaned), method, explicit_price.invalid,
@@ -304,7 +274,17 @@ def _is_transient(exc: Exception) -> bool:
 
 
 def parse_constraints(
-    query: str, *, settings: Settings | None = None, client: Any | None = None
+    query: str,
+    *,
+    settings: Settings | None = None,
+    client: Any | None = None,
+    provider: GenerationProvider | None = None,
 ) -> ConstraintParseResponse:
     """Service entry point used by the API and semantic-search callers."""
-    return GeminiConstraintExtractor(settings=settings, client=client).extract(query)
+    return ConstraintExtractor(
+        settings=settings, client=client, provider=provider
+    ).extract(query)
+
+
+# Backward-compatible import; new business code uses ConstraintExtractor.
+GeminiConstraintExtractor = ConstraintExtractor

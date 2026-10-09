@@ -33,7 +33,9 @@ class Product(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     image_reference: Mapped[str] = mapped_column(String(512), nullable=False)
     slug: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
-    embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIMENSIONS), nullable=True)
+    # Unbounded pgvector permits independently configured provider dimensions.
+    # Provider/model/dimension metadata prevents cross-space comparisons.
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(), nullable=True)
     search_vector: Mapped[str | None] = mapped_column(TSVECTOR, nullable=True)
     embedding_provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
     embedding_model: Mapped[str | None] = mapped_column(String(128), nullable=True)

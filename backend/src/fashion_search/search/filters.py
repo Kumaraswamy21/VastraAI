@@ -20,6 +20,8 @@ def constraints_currency_supported(
 ) -> bool:
     """Return False when monetary filters use an unsupported catalog currency."""
     cfg = settings or get_settings()
+    if constraints.price_min is None and constraints.price_max is None:
+        return True
     return constraints.currency.upper() == cfg.market_currency.upper()
 
 
@@ -36,15 +38,13 @@ def apply_search_constraints(stmt: Stmt, constraints: FashionSearchConstraints) 
     if constraints.size is not None:
         stmt = stmt.where(Product.sizes.contains([constraints.size]))
     if constraints.price_min is not None:
-        minimum = int(constraints.price_min)
         if constraints.price_min_inclusive:
-            stmt = stmt.where(Product.price_inr >= minimum)
+            stmt = stmt.where(Product.price_inr >= constraints.price_min)
         else:
-            stmt = stmt.where(Product.price_inr > minimum)
+            stmt = stmt.where(Product.price_inr > constraints.price_min)
     if constraints.price_max is not None:
-        maximum = int(constraints.price_max)
         if constraints.price_max_inclusive:
-            stmt = stmt.where(Product.price_inr <= maximum)
+            stmt = stmt.where(Product.price_inr <= constraints.price_max)
         else:
-            stmt = stmt.where(Product.price_inr < maximum)
+            stmt = stmt.where(Product.price_inr < constraints.price_max)
     return stmt

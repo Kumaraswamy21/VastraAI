@@ -1,4 +1,4 @@
-"""CLI entry point for Gemini product embedding generation."""
+"""CLI entry point for configured-provider product embedding generation."""
 
 from __future__ import annotations
 
@@ -10,12 +10,12 @@ from fashion_search.embeddings.pipeline import run_embedding_pipeline
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate Gemini embeddings for the fashion catalog.",
+        description="Generate configured-provider embeddings for the fashion catalog.",
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Inspect products without calling Gemini or writing embeddings.",
+        help="Inspect products without calling the provider or writing embeddings.",
     )
     parser.add_argument(
         "--limit",

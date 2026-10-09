@@ -62,7 +62,7 @@ class ConstraintParseResponse(BaseModel):
 
     query: str
     constraints: FashionSearchConstraints
-    extraction_method: Literal["gemini", "fallback"]
+    extraction_method: Literal["gemini", "ollama", "fallback"]
 
 
 class SemanticSearchRequest(BaseModel):
@@ -106,6 +106,8 @@ class SemanticSearchResponse(BaseModel):
     total: int = Field(ge=0)
     embedding_model: str
     embedding_dimensions: int
+    embedding_provider: str = "gemini"
+    embedding_index_status: Literal["ready", "empty", "incompatible", "unknown"] = "unknown"
     results: list[SemanticSearchHit]
 
 
@@ -135,6 +137,31 @@ class HybridSearchScores(BaseModel):
     hybrid_score: float = Field(ge=0)
 
 
+class RankingEvidence(BaseModel):
+    """Observable signals behind a result; scores are not probabilities."""
+
+    semantic_similarity: float | None = Field(default=None, ge=-1.0, le=1.0)
+    semantic_rank: int | None = Field(default=None, ge=1)
+    keyword_score: float | None = Field(default=None, ge=0)
+    keyword_rank: int | None = Field(default=None, ge=1)
+    hybrid_score: float = Field(ge=0)
+    final_rank: int = Field(ge=1)
+    ranking_sources: list[Literal["semantic", "keyword"]]
+    matched_constraints: list[
+        Literal["category", "color", "occasion", "size", "gender", "price"]
+    ]
+
+
+class SearchDiagnostics(BaseModel):
+    """Progressive hard-filter counts collected in one aggregate query."""
+
+    enabled: bool = True
+    initial_catalog: int = Field(ge=0)
+    exact_match_count: int = Field(ge=0)
+    filter_counts: dict[str, int] = Field(default_factory=dict)
+    eliminated_by: str | None = None
+
+
 class HybridSearchResult(BaseModel):
     """One fused product hit."""
 
@@ -146,11 +173,15 @@ class HybridSearchResult(BaseModel):
     style: str
     gender: str
     occasion: str
+    sizes: list[str] = Field(default_factory=list)
     price_inr: int
     currency: str = "INR"
     image_reference: str
     product_url: str
     scores: HybridSearchScores
+    match_quality: Literal["strong", "good", "weak"]
+    match_reason: str
+    ranking: RankingEvidence
 
 
 class HybridSearchResponse(BaseModel):
@@ -161,4 +192,17 @@ class HybridSearchResponse(BaseModel):
     filters: dict[str, object]
     total: int = Field(ge=0)
     results: list[HybridSearchResult]
+    search_status: Literal[
+        "success",
+        "no_exact_matches",
+        "no_relevant_matches",
+        "no_results",
+        "unsupported_constraints",
+    ] = "success"
+    message: str | None = None
+    suggestions: list[str] = Field(default_factory=list)
+    diagnostics: SearchDiagnostics | None = None
+    search_mode: Literal["hybrid", "keyword_fallback", "semantic_fallback"] = "hybrid"
+    semantic_search_available: bool = True
+    embedding_index_status: Literal["ready", "empty", "incompatible", "unknown"] = "unknown"
     metrics: dict[str, object] = Field(default_factory=dict)

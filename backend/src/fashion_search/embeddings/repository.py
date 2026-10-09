@@ -1,4 +1,4 @@
-"""Persist Gemini product embeddings and generation state on products."""
+"""Persist provider-identified product embeddings and generation state."""
 
 from __future__ import annotations
 
@@ -102,7 +102,7 @@ def iter_product_batches(batch_size: int, *, limit: int | None = None):
 
 
 def mark_processing(product_ids: list[int]) -> None:
-    """Claim products before calling Gemini."""
+    """Claim products before calling the configured embedding provider."""
     if not product_ids:
         return
     statement = (

@@ -47,7 +47,7 @@ def search_hybrid(body: HybridSearchRequest) -> HybridSearchResponse:
 
 @router.post("/semantic", response_model=SemanticSearchResponse)
 def search_semantic(body: SemanticSearchRequest) -> SemanticSearchResponse:
-    """Rank products by Gemini query embedding + pgvector cosine similarity."""
+    """Rank products by configured query embedding + pgvector cosine similarity."""
     try:
         return semantic_search(body)
     except SemanticSearchError as exc:

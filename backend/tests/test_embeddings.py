@@ -277,7 +277,7 @@ class PipelineTests(unittest.TestCase):
             patch("fashion_search.embeddings.pipeline.recover_stale_processing") as recover,
             patch("fashion_search.embeddings.pipeline.mark_processing") as mark,
             patch("fashion_search.embeddings.pipeline.save_completed") as save,
-            patch("fashion_search.embeddings.pipeline.build_gemini_embedder") as build,
+            patch("fashion_search.embeddings.pipeline.get_embedding_provider") as build,
         ):
             stats = run_embedding_pipeline(dry_run=True, settings=settings)
         self.assertEqual(stats.inspected, 1)
@@ -423,7 +423,7 @@ class PipelineTests(unittest.TestCase):
                 return_value=[[product]],
             ),
             patch("fashion_search.embeddings.pipeline.recover_stale_processing", return_value=0),
-            patch("fashion_search.embeddings.pipeline.build_gemini_embedder") as build,
+            patch("fashion_search.embeddings.pipeline.get_embedding_provider") as build,
         ):
             stats = run_embedding_pipeline(dry_run=False, settings=settings)
         self.assertEqual(stats.skipped, 1)

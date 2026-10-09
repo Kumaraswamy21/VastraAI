@@ -1,4 +1,4 @@
-"""Gemini product embeddings (hosted API only)."""
+"""Provider-neutral product embedding contracts and adapters."""
 
 from fashion_search.embeddings.base import EmbeddingProvider
 from fashion_search.embeddings.gemini import GeminiEmbedder, build_gemini_embedder

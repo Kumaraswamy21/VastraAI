@@ -1,4 +1,4 @@
-"""Idempotent catalog embedding pipeline using Gemini only."""
+"""Idempotent catalog embedding pipeline for the configured provider."""
 
 from __future__ import annotations
 
@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 
 from fashion_search.config.settings import Settings, get_settings
 from fashion_search.core.logging import configure_logging, get_logger
-from fashion_search.embeddings.gemini import GeminiEmbedder, build_gemini_embedder
+from fashion_search.ai.factory import get_embedding_identity, get_embedding_provider
+from fashion_search.embeddings.base import EmbeddingProvider
 from fashion_search.embeddings.normalize import normalize_product_text, text_hash
 from fashion_search.embeddings.repository import (
     iter_product_batches,
@@ -61,7 +62,7 @@ def run_embedding_pipeline(
     limit: int | None = None,
     batch_size: int | None = None,
     settings: Settings | None = None,
-    embedder: GeminiEmbedder | None = None,
+    embedder: EmbeddingProvider | None = None,
 ) -> PipelineStats:
     """Normalize, skip unchanged rows, embed stale products, persist vectors."""
     configure_logging()
@@ -75,6 +76,10 @@ def run_embedding_pipeline(
             logger.info("recovered_stale_processing count=%s", stats.recovered_stale)
 
     worker = embedder
+    configured = get_embedding_identity(cfg)
+    provider_name = _string_attr(worker, "name") or configured.provider
+    model_name = _string_attr(worker, "model_name") or configured.model
+    dimensions = _int_attr(worker, "dimensions") or configured.dimensions
     pending: list[_WorkItem] = []
 
     for products in iter_product_batches(chunk, limit=limit):
@@ -91,9 +96,9 @@ def run_embedding_pipeline(
             if not needs_embedding(
                 product,
                 text_digest=digest,
-                model=cfg.embedding_model,
-                dimensions=cfg.embedding_dimensions,
-                provider="gemini",
+                model=model_name,
+                dimensions=dimensions,
+                provider=provider_name,
             ):
                 stats.skipped += 1
                 continue
@@ -109,7 +114,7 @@ def run_embedding_pipeline(
         _flush_batch(pending, stats, worker=worker, settings=cfg, dry_run=dry_run)
 
     if worker is not None:
-        stats.api_requests = worker.api_request_count
+        stats.api_requests = getattr(worker, "api_request_count", 0)
 
     logger.info(
         "embedding_pipeline_done inspected=%s skipped=%s required=%s embedded=%s failed=%s api_requests=%s dry_run=%s",
@@ -125,24 +130,24 @@ def run_embedding_pipeline(
 
 
 def _ensure_worker(
-    worker: GeminiEmbedder | None,
+    worker: EmbeddingProvider | None,
     *,
     dry_run: bool,
     settings: Settings,
-) -> GeminiEmbedder | None:
-    """Create the Gemini client only when a live run has work to do."""
+) -> EmbeddingProvider | None:
+    """Create the configured provider only when a live run has work to do."""
     if dry_run:
         return None
     if worker is not None:
         return worker
-    return build_gemini_embedder(settings)
+    return get_embedding_provider(settings)
 
 
 def _flush_batch(
     items: list[_WorkItem],
     stats: PipelineStats,
     *,
-    worker: GeminiEmbedder | None,
+    worker: EmbeddingProvider | None,
     settings: Settings,
     dry_run: bool,
 ) -> None:
@@ -151,9 +156,12 @@ def _flush_batch(
     ids = [item.product_id for item in items]
     mark_processing(ids)
     try:
-        vectors = worker.embed_texts([item.text for item in items])
+        texts = [item.text for item in items]
+        vectors = worker.embed_documents(texts)
+        if not isinstance(vectors, list) and hasattr(worker, "embed_texts"):
+            vectors = worker.embed_texts(texts)
     except Exception as exc:
-        logger.exception("gemini_batch_failed count=%s", len(items))
+        logger.exception("embedding_batch_failed provider=%s count=%s", worker.name, len(items))
         for item in items:
             save_failed(item.product_id, str(exc))
             stats.failed += 1
@@ -165,12 +173,22 @@ def _flush_batch(
                 product_id=item.product_id,
                 vector=vector,
                 text_digest=item.digest,
-                provider="gemini",
-                model=settings.embedding_model,
-                dimensions=settings.embedding_dimensions,
+                provider=_string_attr(worker, "name") or get_embedding_identity(settings).provider,
+                model=_string_attr(worker, "model_name") or get_embedding_identity(settings).model,
+                dimensions=_int_attr(worker, "dimensions") or get_embedding_identity(settings).dimensions,
             )
             stats.embedded += 1
         except Exception as exc:
             logger.exception("persist_failed product_id=%s", item.product_id)
             save_failed(item.product_id, str(exc))
             stats.failed += 1
+
+
+def _string_attr(value: object | None, name: str) -> str | None:
+    result = getattr(value, name, None)
+    return result if isinstance(result, str) else None
+
+
+def _int_attr(value: object | None, name: str) -> int | None:
+    result = getattr(value, name, None)
+    return result if isinstance(result, int) else None

@@ -1,4 +1,4 @@
-"""Deterministic product text for Gemini document embeddings."""
+"""Deterministic provider-neutral product text for document embeddings."""
 
 from __future__ import annotations
 

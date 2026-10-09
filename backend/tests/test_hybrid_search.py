@@ -65,8 +65,12 @@ class PreprocessTests(unittest.TestCase):
 
 class FilterTests(unittest.TestCase):
     def test_currency_guard(self) -> None:
-        constraints = FashionSearchConstraints(currency="USD")
+        constraints = FashionSearchConstraints(currency="USD", price_max=Decimal("100"))
         self.assertFalse(constraints_currency_supported(constraints))
+
+    def test_currency_is_irrelevant_without_a_price_filter(self) -> None:
+        constraints = FashionSearchConstraints(currency="USD")
+        self.assertTrue(constraints_currency_supported(constraints))
 
     def test_price_max_exclusive(self) -> None:
         from fashion_search.catalog.models import Product
@@ -81,6 +85,18 @@ class FilterTests(unittest.TestCase):
         stmt = apply_search_constraints(select(Product), constraints)
         compiled = str(stmt.whereclause)
         self.assertIn("price_inr", compiled)
+
+    def test_fractional_price_bound_is_not_truncated(self) -> None:
+        from fashion_search.catalog.models import Product
+        from sqlalchemy import select
+
+        constraints = FashionSearchConstraints(
+            price_min=Decimal("4000.50"),
+            price_min_inclusive=True,
+        )
+        stmt = apply_search_constraints(select(Product), constraints)
+        params = stmt.compile().params
+        self.assertIn(Decimal("4000.50"), params.values())
 
 
 @unittest.skipUnless(database_url_configured(), "DATABASE_URL required")
@@ -183,7 +199,7 @@ class HybridIntegrationTests(unittest.TestCase):
                 extraction_method="fallback",
                 query="black dress under ₹4000",
             )
-            with patch("fashion_search.search.hybrid.build_gemini_embedder") as build:
+            with patch("fashion_search.search.hybrid.get_embedding_provider") as build:
                 embedder = MagicMock()
                 embedder.embed_query.side_effect = EmbeddingConfigError("gemini down")
                 build.return_value = embedder
@@ -227,7 +243,7 @@ class HybridServiceTests(unittest.TestCase):
             embedding_model="gemini-embedding-001",
             embedding_dimensions=768,
         )
-        constraints = FashionSearchConstraints(currency="USD")
+        constraints = FashionSearchConstraints(currency="USD", price_max=Decimal("100"))
         with patch("fashion_search.search.hybrid.parse_constraints") as parse:
             parse.return_value = SimpleNamespace(
                 constraints=constraints,
@@ -240,6 +256,9 @@ class HybridServiceTests(unittest.TestCase):
                 embedder=MagicMock(),
             )
         self.assertEqual(response.total, 0)
+        self.assertEqual(response.search_status, "unsupported_constraints")
+        self.assertIn("USD", response.message)
+        self.assertEqual(response.metrics["zero_results"], 1)
 
 
 if __name__ == "__main__":

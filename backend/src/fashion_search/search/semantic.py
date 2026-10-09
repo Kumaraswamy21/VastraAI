@@ -1,4 +1,4 @@
-"""Orchestrate Gemini query embedding + pgvector cosine search."""
+"""Orchestrate provider-neutral query embedding + compatible vector search."""
 
 from __future__ import annotations
 
@@ -6,18 +6,20 @@ import time
 
 from fashion_search.config.settings import Settings, get_settings
 from fashion_search.core.logging import get_logger
-from fashion_search.embeddings.errors import (
-    EmbeddingConfigError,
-    EmbeddingTransientError,
-    EmbeddingValidationError,
+from fashion_search.ai.errors import (
+    AIProviderAuthenticationError,
+    AIProviderTimeoutError,
+    AIProviderUnavailableError,
+    EmbeddingDimensionError,
 )
-from fashion_search.embeddings.gemini import GeminiEmbedder, build_gemini_embedder
+from fashion_search.ai.factory import get_embedding_provider
+from fashion_search.embeddings.base import EmbeddingProvider
 from fashion_search.search.schemas import (
     SemanticSearchHit,
     SemanticSearchRequest,
     SemanticSearchResponse,
 )
-from fashion_search.search.vector import VectorHit, search_by_vector
+from fashion_search.search.vector import VectorHit, embedding_index_status, search_by_vector
 
 logger = get_logger(__name__)
 
@@ -62,28 +64,63 @@ def semantic_search(
     request: SemanticSearchRequest,
     *,
     settings: Settings | None = None,
-    embedder: GeminiEmbedder | None = None,
+    embedder: EmbeddingProvider | None = None,
 ) -> SemanticSearchResponse:
-    """Embed the query with Gemini and rank products by cosine similarity."""
+    """Embed a query and search only the provider's matching vector space."""
     cfg = settings or get_settings()
     query = normalize_query(request.query)
-    worker = embedder or build_gemini_embedder(cfg)
+    worker = embedder or get_embedding_provider(cfg)
+    provider_name = (
+        worker.name if isinstance(getattr(worker, "name", None), str)
+        else getattr(cfg, "embedding_provider", "gemini")
+    )
+    model_name = (
+        worker.model_name
+        if isinstance(getattr(worker, "model_name", None), str)
+        else getattr(cfg, "embedding_model", "gemini-embedding-001")
+    )
+    dimensions = (
+        worker.dimensions
+        if isinstance(getattr(worker, "dimensions", None), int)
+        else getattr(cfg, "embedding_dimensions", 768)
+    )
+    index_status = "unknown"
+    if embedder is None:
+        try:
+            index_status = embedding_index_status(
+                provider=provider_name, model=model_name, dimensions=dimensions
+            )
+        except Exception as exc:
+            logger.exception("embedding_index_status_failed provider=%s", provider_name)
+            raise SemanticSearchError("embedding index status unavailable", status_code=503) from exc
+        if index_status != "ready":
+            raise SemanticSearchError(
+                f"embedding index is {index_status}; re-embed the catalog for {provider_name}",
+                status_code=409,
+            )
 
     started = time.perf_counter()
     try:
         embed_started = time.perf_counter()
         query_vector = worker.embed_query(query)
         embed_ms = (time.perf_counter() - embed_started) * 1000
-    except EmbeddingValidationError as exc:
+    except EmbeddingDimensionError as exc:
         raise SemanticSearchError(str(exc), status_code=422) from exc
-    except EmbeddingConfigError as exc:
+    except AIProviderAuthenticationError as exc:
         raise SemanticSearchError(str(exc), status_code=502) from exc
-    except EmbeddingTransientError as exc:
+    except (AIProviderTimeoutError, AIProviderUnavailableError) as exc:
         raise SemanticSearchError(str(exc), status_code=503) from exc
 
     db_started = time.perf_counter()
     try:
-        hits = search_by_vector(query_vector, limit=request.limit, settings=cfg)
+        hits = search_by_vector(
+            query_vector,
+            limit=request.limit,
+            settings=cfg,
+            provider=provider_name,
+            model=model_name,
+            dimensions=dimensions,
+        )
     except ValueError as exc:
         raise SemanticSearchError(str(exc), status_code=422) from exc
     except Exception as exc:
@@ -104,7 +141,9 @@ def semantic_search(
     return SemanticSearchResponse(
         query=query,
         total=len(hits),
-        embedding_model=cfg.embedding_model,
-        embedding_dimensions=cfg.embedding_dimensions,
+        embedding_provider=provider_name,
+        embedding_model=model_name,
+        embedding_dimensions=dimensions,
+        embedding_index_status=index_status,
         results=[hit_from_row(hit) for hit in hits],
     )

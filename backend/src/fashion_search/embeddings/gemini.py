@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-import math
 import random
 import time
-from collections.abc import Sequence
 from typing import Any
 
 from fashion_search.config.settings import Settings, get_settings
 from fashion_search.core.logging import get_logger
+from fashion_search.embeddings.base import AsyncEmbeddingMixin
+from fashion_search.embeddings.base import validate_embedding as _validate_embedding
 from fashion_search.embeddings.errors import (
     EmbeddingConfigError,
     EmbeddingTransientError,
@@ -22,28 +22,24 @@ TASK_DOCUMENT = "RETRIEVAL_DOCUMENT"
 TASK_QUERY = "RETRIEVAL_QUERY"
 
 
-def l2_normalize(vector: Sequence[float]) -> list[float]:
-    """Unit-normalize a vector (required for gemini-embedding-001 dims != 3072)."""
-    norm = math.sqrt(sum(value * value for value in vector))
-    if norm <= 0:
-        raise EmbeddingValidationError("embedding vector has zero norm")
-    return [value / norm for value in vector]
+def l2_normalize(vector: Any) -> list[float]:
+    """Backward-compatible normalization helper."""
+    try:
+        values = [float(value) for value in vector]
+        return _validate_embedding(values, len(values))
+    except Exception as exc:
+        raise EmbeddingValidationError(str(exc)) from exc
 
 
-def validate_embedding(vector: Sequence[float], expected_dimensions: int) -> list[float]:
-    """Reject empty, non-finite, or wrong-sized vectors; return an L2 unit vector."""
-    if not vector:
-        raise EmbeddingValidationError("embedding vector is empty")
-    if len(vector) != expected_dimensions:
-        raise EmbeddingValidationError(
-            f"expected {expected_dimensions} dimensions, got {len(vector)}"
-        )
-    if any(not math.isfinite(value) for value in vector):
-        raise EmbeddingValidationError("embedding contains non-finite values")
-    return l2_normalize(vector)
+def validate_embedding(vector: Any, expected_dimensions: int) -> list[float]:
+    """Backward-compatible validation raising the legacy error alias."""
+    try:
+        return _validate_embedding(vector, expected_dimensions)
+    except Exception as exc:
+        raise EmbeddingValidationError(str(exc)) from exc
 
 
-class GeminiEmbedder:
+class GeminiEmbedder(AsyncEmbeddingMixin):
     """Remote Gemini embeddings. Never downloads model weights."""
 
     name = "gemini"
@@ -61,6 +57,10 @@ class GeminiEmbedder:
         self._client = client
         self.api_request_count = 0
 
+    @property
+    def model_name(self) -> str:
+        return self.model
+
     def _api_key(self) -> str:
         key = (self._settings.gemini_api_key or self._settings.google_api_key).strip()
         if not key:
@@ -74,11 +74,19 @@ class GeminiEmbedder:
             return self._client
         try:
             from google import genai
+            from google.genai import types
         except ImportError as exc:
             raise EmbeddingConfigError(
                 "google-genai is not installed; pip install google-genai"
             ) from exc
-        self._client = genai.Client(api_key=self._api_key())
+        self._client = genai.Client(
+            api_key=self._api_key(),
+            http_options=types.HttpOptions(
+                timeout=int(
+                    getattr(self._settings, "embedding_timeout_seconds", 30.0) * 1000
+                )
+            ),
+        )
         return self._client
 
     def embed_text(self, text: str, *, task_type: str = TASK_DOCUMENT) -> list[float]:
@@ -92,6 +100,17 @@ class GeminiEmbedder:
     def embed_document(self, text: str) -> list[float]:
         """Embed catalog document text with RETRIEVAL_DOCUMENT."""
         return self.embed_text(text, task_type=TASK_DOCUMENT)
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self.embed_texts(texts, task_type=TASK_DOCUMENT)
+
+    def health(self) -> dict[str, object]:
+        """Cheap configuration health; no embedding request is made."""
+        try:
+            self._api_key()
+            return {"provider": self.name, "configured": True, "model": self.model}
+        except EmbeddingConfigError:
+            return {"provider": self.name, "configured": False, "model": self.model}
 
     def embed_texts(
         self,

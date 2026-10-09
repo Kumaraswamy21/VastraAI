@@ -296,7 +296,7 @@ class PgvectorSearchTests(unittest.TestCase):
         client = TestClient(app)
         query_vector = self.vectors[self.product_ids[0]]
         with patch(
-            "fashion_search.search.semantic.build_gemini_embedder"
+            "fashion_search.search.semantic.get_embedding_provider"
         ) as build:
             embedder = MagicMock()
             embedder.embed_query.return_value = query_vector
