@@ -12,10 +12,16 @@ from fashion_search.catalog.service import total_pages
 
 def database_url_configured() -> bool:
     """True when tests can reach the configured PostgreSQL database."""
-    return bool(os.environ.get("DATABASE_URL") or os.path.exists(".env") or os.path.exists("../.env"))
+    return bool(
+        os.environ.get("DATABASE_URL")
+        or os.path.exists(".env")
+        or os.path.exists("../.env")
+    )
 
 
-@unittest.skipUnless(database_url_configured(), "DATABASE_URL is required for catalog API tests")
+@unittest.skipUnless(
+    database_url_configured(), "DATABASE_URL is required for catalog API tests"
+)
 class ProductApiTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -36,7 +42,9 @@ class ProductApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
 
     def test_min_price_above_max_price_is_unprocessable(self) -> None:
-        response = self.client.get("/products", params={"min_price": 5000, "max_price": 1000})
+        response = self.client.get(
+            "/products", params={"min_price": 5000, "max_price": 1000}
+        )
         self.assertEqual(response.status_code, 422)
 
     def test_default_page_is_first_page(self) -> None:
@@ -53,7 +61,9 @@ class ProductApiTests(unittest.TestCase):
     def test_last_page_item_count_matches_remainder(self) -> None:
         first = self.client.get("/products", params={"page_size": 24}).json()
         last_page = first["total_pages"]
-        response = self.client.get("/products", params={"page": last_page, "page_size": 24})
+        response = self.client.get(
+            "/products", params={"page": last_page, "page_size": 24}
+        )
         self.assertEqual(response.status_code, 200)
         remainder = first["total_count"] % 24
         expected = 24 if remainder == 0 else remainder
@@ -70,14 +80,20 @@ class ProductApiTests(unittest.TestCase):
         self.assertEqual(body["page"], past)
 
     def test_exact_category_filter(self) -> None:
-        sample = self.client.get("/products", params={"page_size": 1}).json()["items"][0]
-        response = self.client.get("/products", params={"category": sample["category"], "page_size": 48})
+        sample = self.client.get("/products", params={"page_size": 1}).json()["items"][
+            0
+        ]
+        response = self.client.get(
+            "/products", params={"category": sample["category"], "page_size": 48}
+        )
         self.assertEqual(response.status_code, 200)
         for item in response.json()["items"]:
             self.assertEqual(item["category"], sample["category"])
 
     def test_combined_category_color_gender_filters(self) -> None:
-        sample = self.client.get("/products", params={"page_size": 1}).json()["items"][0]
+        sample = self.client.get("/products", params={"page_size": 1}).json()["items"][
+            0
+        ]
         response = self.client.get(
             "/products",
             params={
@@ -96,7 +112,9 @@ class ProductApiTests(unittest.TestCase):
             self.assertEqual(item["gender"], sample["gender"])
 
     def test_size_filter_requires_containment(self) -> None:
-        sample = self.client.get("/products", params={"page_size": 1}).json()["items"][0]
+        sample = self.client.get("/products", params={"page_size": 1}).json()["items"][
+            0
+        ]
         size = sample["sizes"][0]
         response = self.client.get("/products", params={"size": size, "page_size": 48})
         self.assertEqual(response.status_code, 200)
@@ -104,15 +122,21 @@ class ProductApiTests(unittest.TestCase):
             self.assertIn(size, item["sizes"])
 
     def test_price_range_is_inclusive(self) -> None:
-        response = self.client.get("/products", params={"min_price": 1000, "max_price": 2500, "page_size": 48})
+        response = self.client.get(
+            "/products", params={"min_price": 1000, "max_price": 2500, "page_size": 48}
+        )
         self.assertEqual(response.status_code, 200)
         for item in response.json()["items"]:
             self.assertGreaterEqual(item["price_inr"], 1000)
             self.assertLessEqual(item["price_inr"], 2500)
 
     def test_price_sort_orders(self) -> None:
-        asc = self.client.get("/products", params={"sort": "price_asc", "page_size": 10}).json()["items"]
-        desc = self.client.get("/products", params={"sort": "price_desc", "page_size": 10}).json()["items"]
+        asc = self.client.get(
+            "/products", params={"sort": "price_asc", "page_size": 10}
+        ).json()["items"]
+        desc = self.client.get(
+            "/products", params={"sort": "price_desc", "page_size": 10}
+        ).json()["items"]
         asc_prices = [item["price_inr"] for item in asc]
         desc_prices = [item["price_inr"] for item in desc]
         self.assertEqual(asc_prices, sorted(asc_prices))
@@ -124,7 +148,9 @@ class ProductApiTests(unittest.TestCase):
         self.assertIn("not found", response.json()["detail"].lower())
 
     def test_known_slug_omits_hidden_columns(self) -> None:
-        sample = self.client.get("/products", params={"page_size": 1}).json()["items"][0]
+        sample = self.client.get("/products", params={"page_size": 1}).json()["items"][
+            0
+        ]
         response = self.client.get(f"/products/{sample['slug']}")
         self.assertEqual(response.status_code, 200)
         body = response.json()

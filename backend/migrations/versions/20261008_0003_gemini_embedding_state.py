@@ -13,14 +13,30 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.execute("ALTER TABLE products ALTER COLUMN embedding TYPE vector(768) USING NULL")
-    op.add_column("products", sa.Column("embedding_provider", sa.String(length=32), nullable=True))
-    op.add_column("products", sa.Column("embedding_model", sa.String(length=128), nullable=True))
-    op.add_column("products", sa.Column("embedding_dimensions", sa.Integer(), nullable=True))
-    op.add_column("products", sa.Column("embedding_text_hash", sa.String(length=64), nullable=True))
+    op.execute(
+        "ALTER TABLE products ALTER COLUMN embedding TYPE vector(768) USING NULL"
+    )
+    op.add_column(
+        "products", sa.Column("embedding_provider", sa.String(length=32), nullable=True)
+    )
+    op.add_column(
+        "products", sa.Column("embedding_model", sa.String(length=128), nullable=True)
+    )
+    op.add_column(
+        "products", sa.Column("embedding_dimensions", sa.Integer(), nullable=True)
+    )
     op.add_column(
         "products",
-        sa.Column("embedding_status", sa.String(length=16), nullable=False, server_default="PENDING"),
+        sa.Column("embedding_text_hash", sa.String(length=64), nullable=True),
+    )
+    op.add_column(
+        "products",
+        sa.Column(
+            "embedding_status",
+            sa.String(length=16),
+            nullable=False,
+            server_default="PENDING",
+        ),
     )
     op.add_column(
         "products",
@@ -33,7 +49,9 @@ def upgrade() -> None:
         "embedding_status IN ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED')",
     )
     op.create_index("ix_products_embedding_status", "products", ["embedding_status"])
-    op.create_index("ix_products_embedding_text_hash", "products", ["embedding_text_hash"])
+    op.create_index(
+        "ix_products_embedding_text_hash", "products", ["embedding_text_hash"]
+    )
 
 
 def downgrade() -> None:
@@ -47,4 +65,6 @@ def downgrade() -> None:
     op.drop_column("products", "embedding_dimensions")
     op.drop_column("products", "embedding_model")
     op.drop_column("products", "embedding_provider")
-    op.execute("ALTER TABLE products ALTER COLUMN embedding TYPE vector(384) USING NULL")
+    op.execute(
+        "ALTER TABLE products ALTER COLUMN embedding TYPE vector(384) USING NULL"
+    )

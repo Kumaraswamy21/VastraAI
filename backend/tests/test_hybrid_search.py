@@ -11,26 +11,39 @@ from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
 from fashion_search.search.constraints import fallback_parse
-from fashion_search.search.filters import apply_search_constraints, constraints_currency_supported
+from fashion_search.search.filters import (
+    apply_search_constraints,
+    constraints_currency_supported,
+)
 from fashion_search.search.hybrid import hybrid_search
 from fashion_search.search.keyword import search_by_keyword
 from fashion_search.search.preprocess import build_retrieval_query
 from fashion_search.search.ranking import reciprocal_rank_fusion
-from fashion_search.search.schemas import FashionSearchConstraints, HybridSearchRequest
+from fashion_search.search.schemas import (
+    FashionSearchConstraints,
+    HybridSearchRequest,
+    SearchState,
+)
 from fashion_search.search.vector import search_by_vector
 from fashion_search.embeddings.errors import EmbeddingConfigError
 from fashion_search.embeddings.gemini import validate_embedding
 
 
 def database_url_configured() -> bool:
-    return bool(os.environ.get("DATABASE_URL") or os.path.exists(".env") or os.path.exists("../.env"))
+    return bool(
+        os.environ.get("DATABASE_URL")
+        or os.path.exists(".env")
+        or os.path.exists("../.env")
+    )
 
 
 class RrfTests(unittest.TestCase):
     def test_rrf_prefers_items_in_both_lists(self) -> None:
         semantic = [(1, 0.9), (2, 0.8)]
         keyword = [(2, 0.5), (3, 0.4)]
-        fused = reciprocal_rank_fusion(semantic, keyword, rrf_k=60, semantic_weight=0.6, keyword_weight=0.4)
+        fused = reciprocal_rank_fusion(
+            semantic, keyword, rrf_k=60, semantic_weight=0.6, keyword_weight=0.4
+        )
         self.assertEqual(fused[0].product_id, 2)
         self.assertIsNotNone(fused[0].semantic_rank)
         self.assertIsNotNone(fused[0].keyword_rank)
@@ -38,7 +51,9 @@ class RrfTests(unittest.TestCase):
     def test_results_sorted_by_score_then_product_id(self) -> None:
         semantic = [(1, 0.9), (2, 0.8), (3, 0.7)]
         keyword = [(2, 0.9), (3, 0.8), (1, 0.7)]
-        fused = reciprocal_rank_fusion(semantic, keyword, rrf_k=60, semantic_weight=0.6, keyword_weight=0.4)
+        fused = reciprocal_rank_fusion(
+            semantic, keyword, rrf_k=60, semantic_weight=0.6, keyword_weight=0.4
+        )
         for left, right in zip(fused, fused[1:], strict=False):
             if left.hybrid_score == right.hybrid_score:
                 self.assertLess(left.product_id, right.product_id)
@@ -48,19 +63,51 @@ class RrfTests(unittest.TestCase):
     def test_rrf_formula(self) -> None:
         semantic = [(10, 0.99)]
         keyword = []
-        fused = reciprocal_rank_fusion(semantic, keyword, rrf_k=60, semantic_weight=0.6, keyword_weight=0.4)
+        fused = reciprocal_rank_fusion(
+            semantic, keyword, rrf_k=60, semantic_weight=0.6, keyword_weight=0.4
+        )
         expected = 0.6 / (60 + 1)
         self.assertAlmostEqual(fused[0].hybrid_score, expected, places=9)
 
 
 class PreprocessTests(unittest.TestCase):
+    def test_category_aliases_use_indexed_terms(self) -> None:
+        tee = fallback_parse("black tee")
+        self.assertEqual(build_retrieval_query("black tee", tee), "black t-shirt")
+        trainers = fallback_parse("running trainers")
+        self.assertEqual(
+            build_retrieval_query("running trainers", trainers), "running footwear"
+        )
+
+    def test_shoe_size_is_filtered_out_of_keyword_query(self) -> None:
+        query = "men wedding footwear size 9"
+        constraints = fallback_parse(query)
+        self.assertEqual(constraints.size, "9")
+        self.assertEqual(build_retrieval_query(query, constraints), "footwear")
+
     def test_strips_extracted_price_only(self) -> None:
         constraints = fallback_parse("black dress under ₹4000 for wedding")
-        retrieval = build_retrieval_query("black dress under ₹4000 for wedding", constraints)
+        retrieval = build_retrieval_query(
+            "black dress under ₹4000 for wedding", constraints
+        )
         self.assertIn("black", retrieval.lower())
         self.assertIn("dress", retrieval.lower())
         self.assertNotIn("4000", retrieval)
         self.assertNotIn("₹", retrieval)
+
+    def test_strips_hard_filters_without_accessing_nonexistent_style(self) -> None:
+        constraints = fallback_parse("women's dress for wedding size M")
+        retrieval = build_retrieval_query(
+            "women's dress for wedding size M", constraints
+        )
+        self.assertEqual(retrieval, "dress")
+
+    def test_does_not_strip_unrelated_occasion_aliases(self) -> None:
+        constraints = FashionSearchConstraints(category="shirt", occasion="wedding")
+        retrieval = build_retrieval_query(
+            "work inspired shirt for wedding", constraints
+        )
+        self.assertIn("work", retrieval)
 
 
 class FilterTests(unittest.TestCase):
@@ -161,6 +208,12 @@ class HybridIntegrationTests(unittest.TestCase):
         from sqlalchemy import text
 
         with self.engine.begin() as connection:
+            original = connection.execute(
+                text("""SELECT embedding::text, embedding_provider, embedding_model,
+                        embedding_dimensions, embedding_status, embedding_text_hash,
+                        embedding_error FROM products WHERE id = :id"""),
+                {"id": self.product_id},
+            ).one()
             connection.execute(
                 text(
                     """
@@ -180,13 +233,35 @@ class HybridIntegrationTests(unittest.TestCase):
                     "id": self.product_id,
                 },
             )
-        hits = search_by_vector(vector, limit=20, constraints=constraints, settings=self.settings)
-        ids = {hit.product.id for hit in hits}
-        self.assertIn(self.product_id, ids)
-        if self.overpriced_id:
-            self.assertNotIn(self.overpriced_id, ids)
-        for hit in hits:
-            self.assertLessEqual(hit.product.price_inr, 4000)
+        try:
+            hits = search_by_vector(
+                vector, limit=20, constraints=constraints, settings=self.settings
+            )
+            ids = {hit.product.id for hit in hits}
+            self.assertIn(self.product_id, ids)
+            if self.overpriced_id:
+                self.assertNotIn(self.overpriced_id, ids)
+            for hit in hits:
+                self.assertLessEqual(hit.product.price_inr, 4000)
+        finally:
+            with self.engine.begin() as connection:
+                connection.execute(
+                    text("""UPDATE products SET embedding = CAST(:embedding AS vector),
+                            embedding_provider = :provider, embedding_model = :model,
+                            embedding_dimensions = :dims, embedding_status = :status,
+                            embedding_text_hash = :text_hash, embedding_error = :error
+                            WHERE id = :id"""),
+                    {
+                        "embedding": original[0],
+                        "provider": original[1],
+                        "model": original[2],
+                        "dims": original[3],
+                        "status": original[4],
+                        "text_hash": original[5],
+                        "error": original[6],
+                        "id": self.product_id,
+                    },
+                )
 
     def test_hybrid_endpoint_keyword_only_fallback(self) -> None:
         from fashion_search.main import app
@@ -218,7 +293,17 @@ class HybridIntegrationTests(unittest.TestCase):
         from fashion_search.main import app
 
         client = TestClient(app)
-        with patch("fashion_search.api.search.hybrid_search") as search:
+        with (
+            patch("fashion_search.api.search.hybrid_search") as search,
+            patch(
+                "fashion_search.api.search.initial_search_state",
+                return_value=SearchState(
+                    original_query="shirt",
+                    current_query="shirt",
+                    semantic_query="shirt",
+                ),
+            ),
+        ):
             search.return_value = SimpleNamespace(
                 query="x",
                 retrieval_query="x",
@@ -226,6 +311,9 @@ class HybridIntegrationTests(unittest.TestCase):
                 total=0,
                 results=[],
                 metrics={},
+                search_mode="keyword_fallback",
+                search_status="no_exact_matches",
+                semantic_search_available=False,
             )
             response = client.post("/search", json={"query": "shirt", "limit": 3})
         self.assertEqual(response.status_code, 200)

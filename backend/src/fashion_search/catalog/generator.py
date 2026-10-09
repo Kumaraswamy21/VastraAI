@@ -10,12 +10,30 @@ DEFAULT_SEED = 20261007
 DEFAULT_PRODUCT_COUNT = 750
 
 COLORS = (
-    "black", "white", "navy blue", "maroon", "emerald green", "mustard",
-    "beige", "powder blue", "coral", "olive", "lavender", "rust",
+    "black",
+    "white",
+    "navy blue",
+    "maroon",
+    "emerald green",
+    "mustard",
+    "beige",
+    "powder blue",
+    "coral",
+    "olive",
+    "lavender",
+    "rust",
 )
 ADJECTIVES = (
-    "Classic", "Elegant", "Festive", "Contemporary", "Handcrafted",
-    "Refined", "Heritage", "Everyday", "Statement", "Minimal",
+    "Classic",
+    "Elegant",
+    "Festive",
+    "Contemporary",
+    "Handcrafted",
+    "Refined",
+    "Heritage",
+    "Everyday",
+    "Statement",
+    "Minimal",
 )
 
 
@@ -34,21 +52,156 @@ class CategoryProfile:
 
 
 PROFILES = (
-    CategoryProfile("saree", ("women",), ("silk", "cotton", "chiffon", "georgette"), ("wedding", "festive", "party", "formal"), ("banarasi", "kanjeevaram", "printed", "embroidered"), ("Free Size",), (1400, 12000), ("Saree",)),
-    CategoryProfile("kurta", ("women",), ("cotton", "rayon", "silk blend", "linen"), ("casual", "festive", "office", "wedding"), ("straight", "anarkali", "a-line", "embroidered"), ("XS", "S", "M", "L", "XL", "XXL"), (650, 4500), ("Kurta", "Kurti")),
-    CategoryProfile("salwar suit", ("women",), ("cotton", "chanderi", "silk blend", "georgette"), ("festive", "wedding", "office", "party"), ("anarkali", "palazzo", "churidar", "embroidered"), ("XS", "S", "M", "L", "XL", "XXL"), (1200, 7000), ("Suit Set", "Salwar Suit")),
-    CategoryProfile("lehenga", ("women",), ("silk", "velvet", "georgette", "organza"), ("wedding", "festive", "party"), ("embroidered", "zari", "mirror work", "contemporary"), ("XS", "S", "M", "L", "XL"), (3000, 18000), ("Lehenga Set",)),
-    CategoryProfile("dress", ("women",), ("cotton", "viscose", "satin", "linen"), ("casual", "party", "office", "vacation"), ("a-line", "wrap", "maxi", "fit and flare"), ("XS", "S", "M", "L", "XL"), (900, 5500), ("Dress",)),
-    CategoryProfile("shirt", ("men",), ("cotton", "linen", "denim", "viscose"), ("casual", "office", "party", "vacation"), ("checked", "solid", "printed", "slim fit"), ("S", "M", "L", "XL", "XXL"), (700, 3500), ("Shirt",)),
-    CategoryProfile("kurta", ("men",), ("cotton", "linen", "silk blend", "jacquard"), ("festive", "wedding", "casual"), ("classic", "embroidered", "nehru collar", "pathani"), ("S", "M", "L", "XL", "XXL"), (900, 5500), ("Kurta",)),
-    CategoryProfile("sherwani", ("men",), ("silk blend", "brocade", "velvet", "jacquard"), ("wedding", "festive"), ("embroidered", "jodhpuri", "achkan", "classic"), ("S", "M", "L", "XL", "XXL"), (4500, 22000), ("Sherwani", "Achkan")),
-    CategoryProfile("trousers", ("men", "women"), ("cotton blend", "linen blend", "viscose"), ("office", "casual", "party"), ("tailored", "wide leg", "straight fit", "relaxed"), ("28", "30", "32", "34", "36", "38"), (900, 4000), ("Trousers",)),
-    CategoryProfile("jeans", ("men", "women"), ("denim",), ("casual", "party", "travel"), ("straight fit", "slim fit", "relaxed", "bootcut"), ("28", "30", "32", "34", "36", "38"), (1000, 4500), ("Jeans",)),
-    CategoryProfile("t-shirt", ("men", "women", "unisex"), ("cotton", "cotton blend", "modal"), ("casual", "workout", "travel"), ("graphic", "solid", "oversized", "polo"), ("XS", "S", "M", "L", "XL", "XXL"), (450, 2200), ("T-Shirt", "Polo T-Shirt")),
-    CategoryProfile("jacket", ("men", "women", "unisex"), ("denim", "cotton twill", "polyester", "faux leather"), ("casual", "travel", "party"), ("bomber", "biker", "utility", "denim"), ("S", "M", "L", "XL", "XXL"), (1500, 6500), ("Jacket",)),
-    CategoryProfile("dupatta", ("women",), ("chanderi", "silk", "cotton", "organza"), ("festive", "wedding", "casual"), ("bandhani", "phulkari", "printed", "zari"), ("Free Size",), (500, 3500), ("Dupatta",)),
-    CategoryProfile("footwear", ("men",), ("leather", "suede", "textile"), ("wedding", "office", "casual", "festive"), ("mojari", "loafer", "sneaker", "kolhapuri"), ("6", "7", "8", "9", "10", "11"), (900, 6000), ("Mojari", "Loafers", "Sneakers")),
-    CategoryProfile("footwear", ("women",), ("leather", "suede", "textile"), ("wedding", "office", "casual", "festive", "party"), ("juttis", "heels", "flats", "kolhapuri"), ("3", "4", "5", "6", "7", "8"), (800, 5500), ("Juttis", "Heels", "Flats")),
+    CategoryProfile(
+        "saree",
+        ("women",),
+        ("silk", "cotton", "chiffon", "georgette"),
+        ("wedding", "festive", "party", "formal"),
+        ("banarasi", "kanjeevaram", "printed", "embroidered"),
+        ("Free Size",),
+        (1400, 12000),
+        ("Saree",),
+    ),
+    CategoryProfile(
+        "kurta",
+        ("women",),
+        ("cotton", "rayon", "silk blend", "linen"),
+        ("casual", "festive", "office", "wedding"),
+        ("straight", "anarkali", "a-line", "embroidered"),
+        ("XS", "S", "M", "L", "XL", "XXL"),
+        (650, 4500),
+        ("Kurta", "Kurti"),
+    ),
+    CategoryProfile(
+        "salwar suit",
+        ("women",),
+        ("cotton", "chanderi", "silk blend", "georgette"),
+        ("festive", "wedding", "office", "party"),
+        ("anarkali", "palazzo", "churidar", "embroidered"),
+        ("XS", "S", "M", "L", "XL", "XXL"),
+        (1200, 7000),
+        ("Suit Set", "Salwar Suit"),
+    ),
+    CategoryProfile(
+        "lehenga",
+        ("women",),
+        ("silk", "velvet", "georgette", "organza"),
+        ("wedding", "festive", "party"),
+        ("embroidered", "zari", "mirror work", "contemporary"),
+        ("XS", "S", "M", "L", "XL"),
+        (3000, 18000),
+        ("Lehenga Set",),
+    ),
+    CategoryProfile(
+        "dress",
+        ("women",),
+        ("cotton", "viscose", "satin", "linen"),
+        ("casual", "party", "office", "vacation"),
+        ("a-line", "wrap", "maxi", "fit and flare"),
+        ("XS", "S", "M", "L", "XL"),
+        (900, 5500),
+        ("Dress",),
+    ),
+    CategoryProfile(
+        "shirt",
+        ("men",),
+        ("cotton", "linen", "denim", "viscose"),
+        ("casual", "office", "party", "vacation"),
+        ("checked", "solid", "printed", "slim fit"),
+        ("S", "M", "L", "XL", "XXL"),
+        (700, 3500),
+        ("Shirt",),
+    ),
+    CategoryProfile(
+        "kurta",
+        ("men",),
+        ("cotton", "linen", "silk blend", "jacquard"),
+        ("festive", "wedding", "casual"),
+        ("classic", "embroidered", "nehru collar", "pathani"),
+        ("S", "M", "L", "XL", "XXL"),
+        (900, 5500),
+        ("Kurta",),
+    ),
+    CategoryProfile(
+        "sherwani",
+        ("men",),
+        ("silk blend", "brocade", "velvet", "jacquard"),
+        ("wedding", "festive"),
+        ("embroidered", "jodhpuri", "achkan", "classic"),
+        ("S", "M", "L", "XL", "XXL"),
+        (4500, 22000),
+        ("Sherwani", "Achkan"),
+    ),
+    CategoryProfile(
+        "trousers",
+        ("men", "women"),
+        ("cotton blend", "linen blend", "viscose"),
+        ("office", "casual", "party"),
+        ("tailored", "wide leg", "straight fit", "relaxed"),
+        ("28", "30", "32", "34", "36", "38"),
+        (900, 4000),
+        ("Trousers",),
+    ),
+    CategoryProfile(
+        "jeans",
+        ("men", "women"),
+        ("denim",),
+        ("casual", "party", "travel"),
+        ("straight fit", "slim fit", "relaxed", "bootcut"),
+        ("28", "30", "32", "34", "36", "38"),
+        (1000, 4500),
+        ("Jeans",),
+    ),
+    CategoryProfile(
+        "t-shirt",
+        ("men", "women", "unisex"),
+        ("cotton", "cotton blend", "modal"),
+        ("casual", "workout", "travel"),
+        ("graphic", "solid", "oversized", "polo"),
+        ("XS", "S", "M", "L", "XL", "XXL"),
+        (450, 2200),
+        ("T-Shirt", "Polo T-Shirt"),
+    ),
+    CategoryProfile(
+        "jacket",
+        ("men", "women", "unisex"),
+        ("denim", "cotton twill", "polyester", "faux leather"),
+        ("casual", "travel", "party"),
+        ("bomber", "biker", "utility", "denim"),
+        ("S", "M", "L", "XL", "XXL"),
+        (1500, 6500),
+        ("Jacket",),
+    ),
+    CategoryProfile(
+        "dupatta",
+        ("women",),
+        ("chanderi", "silk", "cotton", "organza"),
+        ("festive", "wedding", "casual"),
+        ("bandhani", "phulkari", "printed", "zari"),
+        ("Free Size",),
+        (500, 3500),
+        ("Dupatta",),
+    ),
+    CategoryProfile(
+        "footwear",
+        ("men",),
+        ("leather", "suede", "textile"),
+        ("wedding", "office", "casual", "festive"),
+        ("mojari", "loafer", "sneaker", "kolhapuri"),
+        ("6", "7", "8", "9", "10", "11"),
+        (900, 6000),
+        ("Mojari", "Loafers", "Sneakers"),
+    ),
+    CategoryProfile(
+        "footwear",
+        ("women",),
+        ("leather", "suede", "textile"),
+        ("wedding", "office", "casual", "festive", "party"),
+        ("juttis", "heels", "flats", "kolhapuri"),
+        ("3", "4", "5", "6", "7", "8"),
+        (800, 5500),
+        ("Juttis", "Heels", "Flats"),
+    ),
 )
 
 
@@ -73,7 +226,9 @@ def choose_sizes(rng: random.Random, available: tuple[str, ...]) -> list[str]:
     return list(available[start:end])
 
 
-def build_product(rng: random.Random, profile: CategoryProfile, index: int) -> ProductCreate:
+def build_product(
+    rng: random.Random, profile: CategoryProfile, index: int
+) -> ProductCreate:
     """Build and validate one coherent product from a category profile."""
     color = rng.choice(COLORS)
     material = rng.choice(profile.materials)
@@ -113,4 +268,7 @@ def generate_catalog(
     if not 500 <= count <= 1000:
         raise ValueError("catalog count must be between 500 and 1000")
     rng = random.Random(seed)
-    return [build_product(rng, PROFILES[index % len(PROFILES)], index + 1) for index in range(count)]
+    return [
+        build_product(rng, PROFILES[index % len(PROFILES)], index + 1)
+        for index in range(count)
+    ]

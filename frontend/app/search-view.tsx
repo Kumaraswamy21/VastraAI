@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ApiError,
   fetchConversationalSearch,
@@ -10,17 +10,19 @@ import {
   type HybridSearchResult,
 } from "@/lib/api";
 import { formatInr, swatchForColor } from "@/lib/color-swatch";
+import { restoreSearch, saveSearch } from "@/lib/search-session";
 
-type SearchState =
-  | { kind: "idle" }
-  | { kind: "loading" }
-  | { kind: "error"; message: string }
-  | { kind: "ready"; data: ConversationalSearchResponse };
+type SearchState = {
+  status: "idle" | "loading" | "error" | "ready";
+  data: ConversationalSearchResponse | null;
+  error: string | null;
+};
 
 function SearchResultCard({ result }: { result: HybridSearchResult }) {
   return (
     <Link
       href={result.product_url}
+      aria-label={`View ${result.title}`}
       className="flex flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:border-zinc-300 hover:shadow"
     >
       <div
@@ -45,18 +47,44 @@ function SearchResultCard({ result }: { result: HybridSearchResult }) {
 
 export function SearchView() {
   const [query, setQuery] = useState("");
-  const [state, setState] = useState<SearchState>({ kind: "idle" });
+  const [state, setState] = useState<SearchState>({
+    status: "idle",
+    data: null,
+    error: null,
+  });
+
+  useEffect(() => {
+    const restored = restoreSearch(window.sessionStorage);
+    if (restored) queueMicrotask(() => setState({ status: "ready", data: restored, error: null }));
+  }, []);
+
+  useEffect(() => {
+    try {
+      saveSearch(window.sessionStorage, state.data);
+    } catch {
+      // Storage can be disabled; the current page still works without persistence.
+    }
+  }, [state.data]);
+
+  function startNewSearch() {
+    setQuery("");
+    setState({ status: "idle", data: null, error: null });
+  }
 
   async function onSearch(event: React.FormEvent) {
     event.preventDefault();
     const trimmed = query.trim();
     if (!trimmed) {
-      setState({ kind: "error", message: "Enter a shopping request to search." });
+      setState((current) => ({
+        ...current,
+        status: "error",
+        error: "Enter a shopping request to search.",
+      }));
       return;
     }
-    setState({ kind: "loading" });
+    const current = state.data;
+    setState((previous) => ({ ...previous, status: "loading", error: null }));
     try {
-      const current = state.kind === "ready" ? state.data : null;
       const data = await fetchConversationalSearch(
         current
           ? {
@@ -68,7 +96,7 @@ export function SearchView() {
           : { query: trimmed, limit: 12 },
       );
       setQuery("");
-      setState({ kind: "ready", data });
+      setState({ status: "ready", data, error: null });
     } catch (error: unknown) {
       const message =
         error instanceof ApiError
@@ -76,15 +104,15 @@ export function SearchView() {
           : error instanceof Error
             ? error.message
             : "Search failed";
-      setState({ kind: "error", message });
+      setState((previous) => ({ ...previous, status: "error", error: message }));
     }
   }
 
-  const ready = state.kind === "ready" ? state.data : null;
+  const ready = state.data;
 
   async function removeFilter(field: ConstraintField) {
     if (!ready) return;
-    setState({ kind: "loading" });
+    setState((previous) => ({ ...previous, status: "loading", error: null }));
     try {
       const data = await fetchConversationalSearch({
         session_id: ready.session_id,
@@ -92,10 +120,10 @@ export function SearchView() {
         updates: [{ field, operation: "REMOVE" }],
         limit: 12,
       });
-      setState({ kind: "ready", data });
+      setState({ status: "ready", data, error: null });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Could not remove filter";
-      setState({ kind: "error", message });
+      setState((previous) => ({ ...previous, status: "error", error: message }));
     }
   }
 
@@ -133,21 +161,29 @@ export function SearchView() {
           </label>
           <button
             type="submit"
-            disabled={state.kind === "loading"}
+            disabled={state.status === "loading"}
             className="w-fit rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:bg-zinc-400"
           >
-            {state.kind === "loading" ? "Searching…" : "Search catalog"}
+            {state.status === "loading" ? "Searching…" : "Search catalog"}
           </button>
+          {state.data && (
+            <button type="button" onClick={startNewSearch} className="w-fit text-sm text-zinc-600 underline">
+              Start new search
+            </button>
+          )}
         </form>
 
-        {state.kind === "error" && (
+        {state.error && (
           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-            {state.message}
+            {state.error}
           </p>
         )}
 
         {ready && (
-          <section className="flex flex-col gap-4">
+          <section
+            className={`flex flex-col gap-4 transition-opacity ${state.status === "loading" ? "opacity-60" : "opacity-100"}`}
+            aria-busy={state.status === "loading"}
+          >
             <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-700">
               <p>
                 <span className="font-medium text-zinc-900">Active filters:</span>
@@ -159,7 +195,8 @@ export function SearchView() {
                     key={filter.key}
                     type="button"
                     onClick={() => removeFilter(filter.key)}
-                    className="rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1 text-xs text-zinc-800 hover:bg-zinc-100"
+                    disabled={state.status === "loading"}
+                    className="rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1 text-xs text-zinc-800 hover:bg-zinc-100 disabled:cursor-wait"
                     aria-label={`Remove ${filter.label}: ${filter.value}`}
                   >
                     {filter.label}: {filter.value} <span aria-hidden="true">×</span>

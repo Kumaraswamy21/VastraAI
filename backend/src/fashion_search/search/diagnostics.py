@@ -20,7 +20,9 @@ def _active(constraints: FashionSearchConstraints, name: str) -> bool:
     return getattr(constraints, name) is not None
 
 
-def _only(constraints: FashionSearchConstraints, names: set[str]) -> FashionSearchConstraints:
+def _only(
+    constraints: FashionSearchConstraints, names: set[str]
+) -> FashionSearchConstraints:
     payload: dict[str, object] = {"currency": constraints.currency}
     for name in ("category", "color", "occasion", "size", "gender"):
         if name in names:
@@ -40,17 +42,23 @@ def _count_expr(constraints: FashionSearchConstraints):
     return statement.scalar_subquery()
 
 
-def diagnose_zero_results(constraints: FashionSearchConstraints) -> tuple[SearchDiagnostics, list[str]]:
+def diagnose_zero_results(
+    constraints: FashionSearchConstraints,
+) -> tuple[SearchDiagnostics, list[str]]:
     """Get progressive and leave-one-out counts with one database round trip."""
     active = [name for name in FILTER_ORDER if _active(constraints, name)]
     columns = [_count_expr(_only(constraints, set())).label("initial_catalog")]
     accumulated: set[str] = set()
     for name in active:
         accumulated.add(name)
-        columns.append(_count_expr(_only(constraints, accumulated)).label(f"after_{name}"))
+        columns.append(
+            _count_expr(_only(constraints, accumulated)).label(f"after_{name}")
+        )
     for name in active:
         columns.append(
-            _count_expr(_only(constraints, set(active) - {name})).label(f"without_{name}")
+            _count_expr(_only(constraints, set(active) - {name})).label(
+                f"without_{name}"
+            )
         )
 
     with Session(get_engine()) as session:
@@ -70,9 +78,11 @@ def diagnose_zero_results(constraints: FashionSearchConstraints) -> tuple[Search
     suggestions = []
     if exact_match_count == 0:
         for name in active:
-            if int(row[f"without_{name}"]) > 0:
+            available = int(row[f"without_{name}"])
+            if available > 0:
                 suggestions.append(
-                    f"Products are available if the {name} filter is removed."
+                    f"The current catalog has {available} matching "
+                    f"product{'s' if available != 1 else ''} if the {name} filter is removed."
                 )
     return (
         SearchDiagnostics(

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import random
 import re
 import time
 from dataclasses import dataclass
@@ -26,23 +25,49 @@ CATEGORIES = frozenset(profile.category for profile in PROFILES)
 # Search vocabulary includes explicit milestone colors that are valid product metadata
 # even though the current deterministic seed palette does not generate all of them.
 COLORS_SUPPORTED = frozenset((*COLORS, "red", "blue", "gray", "purple"))
-OCCASIONS = frozenset(occasion for profile in PROFILES for occasion in profile.occasions)
+OCCASIONS = frozenset(
+    occasion for profile in PROFILES for occasion in profile.occasions
+)
 SIZES = frozenset(size for profile in PROFILES for size in profile.sizes)
+_SIZE_PATTERN = "|".join(
+    re.escape(size).replace(r"\ ", r"\s+")
+    for size in sorted(SIZES, key=len, reverse=True)
+)
 GENDERS = frozenset(gender for profile in PROFILES for gender in profile.genders)
 
 CATEGORY_ALIASES = {
-    "tee": "t-shirt", "tees": "t-shirt", "t shirt": "t-shirt",
-    "t shirts": "t-shirt", "tshirt": "t-shirt", "tshirts": "t-shirt",
-    "trainer": "footwear", "trainers": "footwear", "sneaker": "footwear",
-    "sneakers": "footwear", "kurti": "kurta", "kurtis": "kurta",
-    "running shoe": "footwear", "running shoes": "footwear",
-    "sarees": "saree", "shirts": "shirt", "dresses": "dress",
+    "tee": "t-shirt",
+    "tees": "t-shirt",
+    "t shirt": "t-shirt",
+    "t shirts": "t-shirt",
+    "tshirt": "t-shirt",
+    "tshirts": "t-shirt",
+    "trainer": "footwear",
+    "trainers": "footwear",
+    "sneaker": "footwear",
+    "sneakers": "footwear",
+    "kurti": "kurta",
+    "kurtis": "kurta",
+    "running shoe": "footwear",
+    "running shoes": "footwear",
+    "sarees": "saree",
+    "shirts": "shirt",
+    "dresses": "dress",
 }
 COLOR_ALIASES = {"navy": "navy blue", "grey": "gray"}
 GENDER_ALIASES = {
-    "male": "men", "man": "men", "men's": "men", "mens": "men",
-    "female": "women", "woman": "women", "women's": "women", "womens": "women",
-    "boy": "kids", "boys": "kids", "girl": "kids", "girls": "kids",
+    "male": "men",
+    "man": "men",
+    "men's": "men",
+    "mens": "men",
+    "female": "women",
+    "woman": "women",
+    "women's": "women",
+    "womens": "women",
+    "boy": "kids",
+    "boys": "kids",
+    "girl": "kids",
+    "girls": "kids",
 }
 OCCASION_ALIASES = {"work": "office", "college": "casual"}
 
@@ -62,7 +87,9 @@ def _phrase_pattern(phrase: str) -> str:
     return r"(?<!\w)" + r"[\s-]+".join(parts) + r"(?!\w)"
 
 
-def _find_term(query: str, values: set[str] | frozenset[str], aliases: dict[str, str]) -> str | None:
+def _find_term(
+    query: str, values: set[str] | frozenset[str], aliases: dict[str, str]
+) -> str | None:
     candidates = {value: value for value in values}
     candidates.update(aliases)
     for phrase in sorted(candidates, key=len, reverse=True):
@@ -72,10 +99,14 @@ def _find_term(query: str, values: set[str] | frozenset[str], aliases: dict[str,
     return None
 
 
-def normalize_constraints(value: FashionSearchConstraints, *, currency: str = "INR") -> FashionSearchConstraints:
+def normalize_constraints(
+    value: FashionSearchConstraints, *, currency: str = "INR"
+) -> FashionSearchConstraints:
     """Normalize known aliases and safely discard unsupported categorical values."""
 
-    def normalized(raw: str | None, supported: frozenset[str], aliases: dict[str, str]) -> str | None:
+    def normalized(
+        raw: str | None, supported: frozenset[str], aliases: dict[str, str]
+    ) -> str | None:
         if raw is None:
             return None
         cleaned = re.sub(r"\s+", " ", raw.strip().lower().replace("_", " "))
@@ -84,7 +115,11 @@ def normalize_constraints(value: FashionSearchConstraints, *, currency: str = "I
 
     size = value.size.strip() if value.size else None
     if size:
-        size = "Free Size" if size.lower().replace("-", " ") == "free size" else size.upper()
+        size = (
+            "Free Size"
+            if size.lower().replace("-", " ") == "free size"
+            else size.upper()
+        )
         if size not in SIZES:
             size = None
     return FashionSearchConstraints(
@@ -123,29 +158,53 @@ def parse_price_facts(query: str) -> PriceFacts:
 
     range_pattern = re.compile(
         rf"\b(?:between|from)\s+{_CURRENCY}{_AMOUNT.format(name='low')}\s+"
-        rf"(?:and|to|-)\s+{_CURRENCY}{_AMOUNT.format(name='high')}", re.IGNORECASE,
+        rf"(?:and|to|-)\s+{_CURRENCY}{_AMOUNT.format(name='high')}",
+        re.IGNORECASE,
     )
     range_match = range_pattern.search(text)
     if range_match:
         low, high = _amount(range_match, "low"), _amount(range_match, "high")
         remaining = text[: range_match.start()] + text[range_match.end() :]
-        has_extra_bound = re.search(
-            r"\b(?:under|below|less\s+than|up\s+to|at\s+most|above|over|"
-            r"more\s+than|at\s+least|minimum|maximum|min|max)\b",
-            remaining,
-        ) is not None
+        has_extra_bound = (
+            re.search(
+                r"\b(?:under|below|less\s+than|up\s+to|at\s+most|above|over|"
+                r"more\s+than|at\s+least|minimum|maximum|min|max)\b",
+                remaining,
+            )
+            is not None
+        )
         invalid = (
-            low is None or high is None or low < 0 or high < 0 or low > high
+            low is None
+            or high is None
+            or low < 0
+            or high < 0
+            or low > high
             or has_extra_bound
         )
         return PriceFacts(low, high, True, True, detected=True, invalid=invalid)
 
     bounds: list[tuple[str, Decimal | None, bool]] = []
     patterns = (
-        ("max", False, rf"\b(?:under|below|less\s+than)\s+{_CURRENCY}{_AMOUNT.format(name='amount')}"),
-        ("max", True, rf"\b(?:up\s+to|at\s+most|maximum|max)\s+{_CURRENCY}{_AMOUNT.format(name='amount')}"),
-        ("min", False, rf"\b(?:above|over|more\s+than)\s+{_CURRENCY}{_AMOUNT.format(name='amount')}"),
-        ("min", True, rf"\b(?:at\s+least|minimum|min)\s+{_CURRENCY}{_AMOUNT.format(name='amount')}"),
+        (
+            "max",
+            False,
+            rf"\b(?:under|below|less\s+than)\s+{_CURRENCY}{_AMOUNT.format(name='amount')}",
+        ),
+        (
+            "max",
+            True,
+            rf"\b(?:up\s+to|at\s+most|maximum|max)\s+{_CURRENCY}{_AMOUNT.format(name='amount')}",
+        ),
+        (
+            "min",
+            False,
+            rf"\b(?:above|over|more\s+than)\s+{_CURRENCY}{_AMOUNT.format(name='amount')}",
+        ),
+        (
+            "min",
+            True,
+            rf"\b(?:at\s+least|minimum|min)\s+{_CURRENCY}{_AMOUNT.format(name='amount')}",
+        ),
     )
     for kind, inclusive, pattern in patterns:
         for match in re.finditer(pattern, text, flags=re.IGNORECASE):
@@ -161,7 +220,9 @@ def parse_price_facts(query: str) -> PriceFacts:
     minimum, min_inc = mins[0] if mins else (None, None)
     maximum, max_inc = maxes[0] if maxes else (None, None)
     invalid = minimum is not None and maximum is not None and minimum > maximum
-    return PriceFacts(minimum, maximum, min_inc, max_inc, detected=True, invalid=invalid)
+    return PriceFacts(
+        minimum, maximum, min_inc, max_inc, detected=True, invalid=invalid
+    )
 
 
 def fallback_parse(query: str, *, currency: str = "INR") -> FashionSearchConstraints:
@@ -172,7 +233,7 @@ def fallback_parse(query: str, *, currency: str = "INR") -> FashionSearchConstra
     text = re.sub(r"\b(?:ignore|disregard)\b[^;.!?]*(?:[;.!?]|$)", " ", text)
     price = parse_price_facts(text)
     size = None
-    size_match = re.search(r"\bsize\s*[:=-]?\s*(free\s+size|xxl|xl|xs|[sml]|(?:2[8]|3[02468]))\b", text, re.I)
+    size_match = re.search(rf"\bsize\s*[:=-]?\s*({_SIZE_PATTERN})\b", text, re.I)
     if size_match:
         size = size_match.group(1)
     raw = FashionSearchConstraints(
@@ -204,9 +265,7 @@ class ConstraintExtractor:
         if provider is not None:
             self._provider = provider
         elif client is not None:
-            self._provider = get_generation_provider(
-                self._settings, client=client
-            )
+            self._provider = get_generation_provider(self._settings, client=client)
         else:
             from fashion_search.generation.router import GenerationRouter
 
@@ -232,28 +291,43 @@ class ConstraintExtractor:
             method = "fallback"
             logger.warning(
                 "constraint_provider_failed provider=%s query_len=%s error_type=%s",
-                self._provider.name, len(cleaned), type(exc).__name__,
+                self._provider.name,
+                len(cleaned),
+                type(exc).__name__,
             )
-            constraints = fallback_parse(cleaned, currency=self._settings.market_currency)
+            constraints = fallback_parse(
+                cleaned, currency=self._settings.market_currency
+            )
 
         explicit_price = parse_price_facts(cleaned)
         if explicit_price.detected:
             generated_price = (
-                constraints.price_min, constraints.price_max,
-                constraints.price_min_inclusive, constraints.price_max_inclusive,
+                constraints.price_min,
+                constraints.price_max,
+                constraints.price_min_inclusive,
+                constraints.price_max_inclusive,
             )
             deterministic_price = (
-                explicit_price.minimum, explicit_price.maximum,
-                explicit_price.minimum_inclusive, explicit_price.maximum_inclusive,
-            ) if not explicit_price.invalid else (None, None, None, None)
+                (
+                    explicit_price.minimum,
+                    explicit_price.maximum,
+                    explicit_price.minimum_inclusive,
+                    explicit_price.maximum_inclusive,
+                )
+                if not explicit_price.invalid
+                else (None, None, None, None)
+            )
             if generated_price != deterministic_price:
                 logger.warning(
                     "constraint_price_disagreement query_len=%s method=%s invalid=%s",
-                    len(cleaned), method, explicit_price.invalid,
+                    len(cleaned),
+                    method,
+                    explicit_price.invalid,
                 )
                 payload = constraints.model_dump()
                 payload.update(
-                    price_min=deterministic_price[0], price_max=deterministic_price[1],
+                    price_min=deterministic_price[0],
+                    price_max=deterministic_price[1],
                     price_min_inclusive=deterministic_price[2],
                     price_max_inclusive=deterministic_price[3],
                 )
@@ -262,7 +336,9 @@ class ConstraintExtractor:
         elapsed_ms = (time.perf_counter() - started) * 1000
         logger.info(
             "constraint_extraction method=%s query_len=%s latency_ms=%.1f",
-            method, len(cleaned), elapsed_ms,
+            method,
+            len(cleaned),
+            elapsed_ms,
         )
         return ConstraintParseResponse(
             query=cleaned, constraints=constraints, extraction_method=method
@@ -271,7 +347,19 @@ class ConstraintExtractor:
 
 def _is_transient(exc: Exception) -> bool:
     value = f"{type(exc).__name__} {exc}".lower()
-    return any(token in value for token in ("timeout", "429", "rate", "quota", "500", "503", "unavailable", "connection"))
+    return any(
+        token in value
+        for token in (
+            "timeout",
+            "429",
+            "rate",
+            "quota",
+            "500",
+            "503",
+            "unavailable",
+            "connection",
+        )
+    )
 
 
 def parse_constraints(

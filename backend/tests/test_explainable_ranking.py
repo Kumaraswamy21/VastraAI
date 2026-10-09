@@ -57,8 +57,13 @@ def ranked(**overrides):
 
 
 FULL = FashionSearchConstraints(
-    category="dress", color="black", occasion="wedding", size="M",
-    gender="women", price_max=4000, price_max_inclusive=False,
+    category="dress",
+    color="black",
+    occasion="wedding",
+    size="M",
+    gender="women",
+    price_max=4000,
+    price_max_inclusive=False,
 )
 
 
@@ -70,7 +75,9 @@ class ExplanationTests(unittest.TestCase):
     def test_full_exact_match_and_price_are_grounded(self) -> None:
         item = product()
         matches = matched_constraints(item, FULL)
-        self.assertEqual(matches, ["category", "color", "occasion", "size", "gender", "price"])
+        self.assertEqual(
+            matches, ["category", "color", "occasion", "size", "gender", "price"]
+        )
         reason = self.builder.build(item, FULL, ranked(), "strong")
         self.assertIn("black dress", reason)
         self.assertIn("wedding-wear", reason)
@@ -86,7 +93,8 @@ class ExplanationTests(unittest.TestCase):
 
     def test_description_cannot_create_color_or_occasion_match(self) -> None:
         item = product(
-            color="red", occasion=None,
+            color="red",
+            occasion=None,
             description="Pairs with black accessories and is a great wedding gift",
         )
         self.assertNotIn("color", matched_constraints(item, FULL))
@@ -94,7 +102,10 @@ class ExplanationTests(unittest.TestCase):
 
     def test_size_gender_and_range_explanations(self) -> None:
         constraints = FashionSearchConstraints(
-            size="M", gender="women", price_min=2000, price_max=4000,
+            size="M",
+            gender="women",
+            price_min=2000,
+            price_max=4000,
         )
         reason = self.builder.build(product(), constraints, ranked(), "strong")
         self.assertIn("size M", reason)
@@ -114,13 +125,25 @@ class ExplanationTests(unittest.TestCase):
         )
 
     def test_quality_strong_good_weak_and_hard_violation(self) -> None:
-        self.assertEqual(classify_match_quality(product(), FULL, ranked(), self.thresholds), "strong")
-        good = ranked(keyword_rank=None, keyword_rank_score=None, semantic_similarity=0.5)
-        self.assertEqual(classify_match_quality(product(), FULL, good, self.thresholds), "good")
-        weak = ranked(keyword_rank=None, keyword_rank_score=None, semantic_similarity=0.1)
-        self.assertEqual(classify_match_quality(product(), FULL, weak, self.thresholds), "weak")
         self.assertEqual(
-            classify_match_quality(product(color="red"), FULL, ranked(), self.thresholds),
+            classify_match_quality(product(), FULL, ranked(), self.thresholds), "strong"
+        )
+        good = ranked(
+            keyword_rank=None, keyword_rank_score=None, semantic_similarity=0.5
+        )
+        self.assertEqual(
+            classify_match_quality(product(), FULL, good, self.thresholds), "good"
+        )
+        weak = ranked(
+            keyword_rank=None, keyword_rank_score=None, semantic_similarity=0.1
+        )
+        self.assertEqual(
+            classify_match_quality(product(), FULL, weak, self.thresholds), "weak"
+        )
+        self.assertEqual(
+            classify_match_quality(
+                product(color="red"), FULL, ranked(), self.thresholds
+            ),
             "weak",
         )
 
@@ -141,8 +164,11 @@ class ExplanationTests(unittest.TestCase):
 class HybridExplainabilityTests(unittest.TestCase):
     def settings(self):
         return SimpleNamespace(
-            market_currency="INR", hybrid_candidate_limit=10, hybrid_rrf_k=60,
-            hybrid_semantic_weight=0.6, hybrid_keyword_weight=0.4,
+            market_currency="INR",
+            hybrid_candidate_limit=10,
+            hybrid_rrf_k=60,
+            hybrid_semantic_weight=0.6,
+            hybrid_keyword_weight=0.4,
             search_strong_semantic_threshold=0.75,
             search_weak_semantic_threshold=0.35,
             search_min_keyword_signal=0.01,
@@ -154,13 +180,18 @@ class HybridExplainabilityTests(unittest.TestCase):
     @patch("fashion_search.search.hybrid.search_by_vector")
     @patch("fashion_search.search.hybrid.parse_constraints")
     def test_ranking_order_evidence_and_no_extra_calls(
-        self, parse, vector_search, keyword_search, diagnostics,
+        self,
+        parse,
+        vector_search,
+        keyword_search,
+        diagnostics,
     ) -> None:
         constraints = FashionSearchConstraints(category="dress", color="black")
         parse.return_value = SimpleNamespace(constraints=constraints)
         first, second = product(id=1), product(id=2, slug="second")
         vector_search.return_value = [
-            VectorHit(first, 0.9), VectorHit(second, 0.8),
+            VectorHit(first, 0.9),
+            VectorHit(second, 0.8),
         ]
         keyword_search.return_value = [KeywordHit(second, 0.4), KeywordHit(first, 0.3)]
         embedder = MagicMock()
@@ -168,13 +199,18 @@ class HybridExplainabilityTests(unittest.TestCase):
 
         response = hybrid_search(
             HybridSearchRequest(query="black dress", limit=2),
-            settings=self.settings(), embedder=embedder,
+            settings=self.settings(),
+            embedder=embedder,
         )
 
         self.assertEqual([row.product_id for row in response.results], [1, 2])
         self.assertEqual([row.ranking.final_rank for row in response.results], [1, 2])
-        self.assertEqual(response.results[0].ranking.ranking_sources, ["semantic", "keyword"])
-        self.assertEqual(response.results[0].ranking.matched_constraints, ["category", "color"])
+        self.assertEqual(
+            response.results[0].ranking.ranking_sources, ["semantic", "keyword"]
+        )
+        self.assertEqual(
+            response.results[0].ranking.matched_constraints, ["category", "color"]
+        )
         embedder.embed_query.assert_called_once()
         parse.assert_called_once()
         vector_search.assert_called_once()
@@ -186,23 +222,32 @@ class HybridExplainabilityTests(unittest.TestCase):
     @patch("fashion_search.search.hybrid.search_by_vector", return_value=[])
     @patch("fashion_search.search.hybrid.parse_constraints")
     def test_empty_response_uses_diagnostics_without_relaxing(
-        self, parse, vector_search, keyword_search, diagnostics,
+        self,
+        parse,
+        vector_search,
+        keyword_search,
+        diagnostics,
     ) -> None:
         constraints = FashionSearchConstraints(color="black")
         parse.return_value = SimpleNamespace(constraints=constraints)
         diagnostics.return_value = (
             SearchDiagnostics(
-                enabled=True, initial_catalog=10, exact_match_count=0,
+                enabled=True,
+                initial_catalog=10,
+                exact_match_count=0,
                 filter_counts={"color": 0},
                 eliminated_by="color",
             ),
-            ["Products are available if the color filter is removed."],
+            [
+                "The current catalog has 2 matching products if the color filter is removed."
+            ],
         )
         embedder = MagicMock()
         embedder.embed_query.return_value = [1.0]
         response = hybrid_search(
             HybridSearchRequest(query="black", limit=2),
-            settings=self.settings(), embedder=embedder,
+            settings=self.settings(),
+            embedder=embedder,
         )
         self.assertEqual(response.search_status, "no_exact_matches")
         self.assertEqual(response.results, [])
@@ -215,14 +260,20 @@ class HybridExplainabilityTests(unittest.TestCase):
     @patch("fashion_search.search.hybrid.search_by_vector", return_value=[])
     @patch("fashion_search.search.hybrid.parse_constraints")
     def test_empty_retrieval_does_not_falsely_claim_filters_eliminated_products(
-        self, parse, vector_search, keyword_search, diagnostics,
+        self,
+        parse,
+        vector_search,
+        keyword_search,
+        diagnostics,
     ) -> None:
         constraints = FashionSearchConstraints(category="dress")
         parse.return_value = SimpleNamespace(constraints=constraints)
         diagnostics.return_value = (
             SearchDiagnostics(
-                initial_catalog=10, exact_match_count=4,
-                filter_counts={"category": 4}, eliminated_by=None,
+                initial_catalog=10,
+                exact_match_count=4,
+                filter_counts={"category": 4},
+                eliminated_by=None,
             ),
             [],
         )
@@ -230,7 +281,8 @@ class HybridExplainabilityTests(unittest.TestCase):
         embedder.embed_query.return_value = [1.0]
         response = hybrid_search(
             HybridSearchRequest(query="avant-garde dress", limit=2),
-            settings=self.settings(), embedder=embedder,
+            settings=self.settings(),
+            embedder=embedder,
         )
         self.assertEqual(response.search_status, "no_relevant_matches")
         self.assertNotIn("matched all", response.message)

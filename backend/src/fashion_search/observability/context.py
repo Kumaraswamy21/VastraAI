@@ -5,7 +5,9 @@ from contextvars import ContextVar
 from uuid import uuid4
 
 request_id_var: ContextVar[str | None] = ContextVar("request_id", default=None)
-search_request_id_var: ContextVar[str | None] = ContextVar("search_request_id", default=None)
+search_request_id_var: ContextVar[str | None] = ContextVar(
+    "search_request_id", default=None
+)
 fallback_used_var: ContextVar[bool] = ContextVar("fallback_used", default=False)
 
 

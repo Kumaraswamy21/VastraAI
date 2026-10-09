@@ -21,7 +21,9 @@ class PricingCatalog:
                 item = ModelPricing.model_validate(raw)
                 self._entries[(item.provider, item.model)] = item
         except Exception as exc:
-            logger.warning("observability_pricing_invalid error_type=%s", type(exc).__name__)
+            logger.warning(
+                "observability_pricing_invalid error_type=%s", type(exc).__name__
+            )
 
     def estimate(
         self, provider: str, model: str, operation: str, usage: AIUsage
@@ -33,18 +35,49 @@ class PricingCatalog:
         cost = Decimal("0")
         calculable = False
         if operation in {"query_embedding", "document_embedding"}:
-            if usage.total_tokens is not None and item.embedding_cost_per_million_tokens is not None:
-                cost += Decimal(usage.total_tokens) * item.embedding_cost_per_million_tokens / million
+            if (
+                usage.total_tokens is not None
+                and item.embedding_cost_per_million_tokens is not None
+            ):
+                cost += (
+                    Decimal(usage.total_tokens)
+                    * item.embedding_cost_per_million_tokens
+                    / million
+                )
                 calculable = True
         else:
-            if item.input_cost_per_million_tokens is not None and usage.input_tokens is None:
+            if (
+                item.input_cost_per_million_tokens is not None
+                and usage.input_tokens is None
+            ):
                 return None, None, None
-            if item.output_cost_per_million_tokens is not None and usage.output_tokens is None:
+            if (
+                item.output_cost_per_million_tokens is not None
+                and usage.output_tokens is None
+            ):
                 return None, None, None
-            if usage.input_tokens is not None and item.input_cost_per_million_tokens is not None:
-                cost += Decimal(usage.input_tokens) * item.input_cost_per_million_tokens / million
+            if (
+                usage.input_tokens is not None
+                and item.input_cost_per_million_tokens is not None
+            ):
+                cost += (
+                    Decimal(usage.input_tokens)
+                    * item.input_cost_per_million_tokens
+                    / million
+                )
                 calculable = True
-            if usage.output_tokens is not None and item.output_cost_per_million_tokens is not None:
-                cost += Decimal(usage.output_tokens) * item.output_cost_per_million_tokens / million
+            if (
+                usage.output_tokens is not None
+                and item.output_cost_per_million_tokens is not None
+            ):
+                cost += (
+                    Decimal(usage.output_tokens)
+                    * item.output_cost_per_million_tokens
+                    / million
+                )
                 calculable = True
-        return (cost, item.currency, item.effective_date) if calculable else (None, None, None)
+        return (
+            (cost, item.currency, item.effective_date)
+            if calculable
+            else (None, None, None)
+        )

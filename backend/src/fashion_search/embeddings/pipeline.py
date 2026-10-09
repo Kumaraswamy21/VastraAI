@@ -16,6 +16,7 @@ from fashion_search.embeddings.repository import (
     product_as_mapping,
     recover_stale_processing,
     save_completed,
+    save_completed_batch,
     save_failed,
 )
 
@@ -106,7 +107,9 @@ def run_embedding_pipeline(
             pending.append(_WorkItem(product.id, text, digest))
             if len(pending) >= chunk:
                 worker = _ensure_worker(worker, dry_run=dry_run, settings=cfg)
-                _flush_batch(pending, stats, worker=worker, settings=cfg, dry_run=dry_run)
+                _flush_batch(
+                    pending, stats, worker=worker, settings=cfg, dry_run=dry_run
+                )
                 pending.clear()
 
     if pending:
@@ -161,27 +164,52 @@ def _flush_batch(
         if not isinstance(vectors, list) and hasattr(worker, "embed_texts"):
             vectors = worker.embed_texts(texts)
     except Exception as exc:
-        logger.exception("embedding_batch_failed provider=%s count=%s", worker.name, len(items))
+        logger.exception(
+            "embedding_batch_failed provider=%s count=%s", worker.name, len(items)
+        )
         for item in items:
             save_failed(item.product_id, str(exc))
             stats.failed += 1
         return
 
-    for item, vector in zip(items, vectors, strict=True):
-        try:
-            save_completed(
-                product_id=item.product_id,
-                vector=vector,
-                text_digest=item.digest,
-                provider=_string_attr(worker, "name") or get_embedding_identity(settings).provider,
-                model=_string_attr(worker, "model_name") or get_embedding_identity(settings).model,
-                dimensions=_int_attr(worker, "dimensions") or get_embedding_identity(settings).dimensions,
-            )
-            stats.embedded += 1
-        except Exception as exc:
-            logger.exception("persist_failed product_id=%s", item.product_id)
-            save_failed(item.product_id, str(exc))
-            stats.failed += 1
+    provider = _string_attr(worker, "name") or get_embedding_identity(settings).provider
+    model = _string_attr(worker, "model_name") or get_embedding_identity(settings).model
+    dimensions = (
+        _int_attr(worker, "dimensions") or get_embedding_identity(settings).dimensions
+    )
+    rows = [
+        {
+            "target_id": item.product_id,
+            "vector": vector,
+            "text_digest": item.digest,
+            "provider": provider,
+            "model": model,
+            "dimensions": dimensions,
+        }
+        for item, vector in zip(items, vectors, strict=True)
+    ]
+    try:
+        save_completed_batch(rows)
+        stats.embedded += len(rows)
+    except Exception:
+        # Isolate exceptional per-row persistence failures without penalizing the
+        # normal path with one transaction per product.
+        logger.exception("embedding_batch_persist_failed count=%s", len(rows))
+        for item, vector in zip(items, vectors, strict=True):
+            try:
+                save_completed(
+                    product_id=item.product_id,
+                    vector=vector,
+                    text_digest=item.digest,
+                    provider=provider,
+                    model=model,
+                    dimensions=dimensions,
+                )
+                stats.embedded += 1
+            except Exception as exc:
+                logger.exception("persist_failed product_id=%s", item.product_id)
+                save_failed(item.product_id, str(exc))
+                stats.failed += 1
 
 
 def _string_attr(value: object | None, name: str) -> str | None:

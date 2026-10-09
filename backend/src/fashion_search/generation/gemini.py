@@ -29,7 +29,9 @@ class GeminiGenerator(AsyncGenerationMixin):
 
     name = "gemini"
 
-    def __init__(self, settings: Settings | None = None, client: Any | None = None) -> None:
+    def __init__(
+        self, settings: Settings | None = None, client: Any | None = None
+    ) -> None:
         self._settings = settings or get_settings()
         self.model_name = (
             getattr(self._settings, "generation_model", None)
@@ -69,7 +71,9 @@ class GeminiGenerator(AsyncGenerationMixin):
 
         response = self._call(
             prompt,
-            types.GenerateContentConfig(system_instruction=system_prompt, temperature=0.0),
+            types.GenerateContentConfig(
+                system_instruction=system_prompt, temperature=0.0
+            ),
         )
         text = (getattr(response, "text", None) or "").strip()
         if not text:
@@ -98,11 +102,14 @@ class GeminiGenerator(AsyncGenerationMixin):
                 return schema.model_validate(parsed)
             return schema.model_validate_json(response.text)
         except (ValidationError, json.JSONDecodeError, TypeError, ValueError) as exc:
-            raise AIProviderResponseError("Gemini returned invalid structured output") from exc
+            raise AIProviderResponseError(
+                "Gemini returned invalid structured output"
+            ) from exc
 
     def _call(self, prompt: str, config: Any) -> Any:
         max_retries = getattr(
-            self._settings, "generation_max_retries",
+            self._settings,
+            "generation_max_retries",
             getattr(self._settings, "search_parser_max_retries", 1),
         )
         for attempt in range(max_retries + 1):
@@ -119,7 +126,9 @@ class GeminiGenerator(AsyncGenerationMixin):
                 )
                 logger.info(
                     "generation_request provider=%s model=%s latency_ms=%.1f",
-                    self.name, self.model_name, (time.perf_counter() - started) * 1000,
+                    self.name,
+                    self.model_name,
+                    (time.perf_counter() - started) * 1000,
                 )
                 return response
             except AIProviderAuthenticationError:
@@ -128,10 +137,17 @@ class GeminiGenerator(AsyncGenerationMixin):
                 mapped = _translate(exc)
                 logger.warning(
                     "generation_failure provider=%s error_type=%s attempt=%s",
-                    self.name, type(mapped).__name__, attempt + 1,
+                    self.name,
+                    type(mapped).__name__,
+                    attempt + 1,
                 )
                 if attempt >= max_retries or not isinstance(
-                    mapped, (AIProviderRateLimitError, AIProviderTimeoutError, AIProviderUnavailableError)
+                    mapped,
+                    (
+                        AIProviderRateLimitError,
+                        AIProviderTimeoutError,
+                        AIProviderUnavailableError,
+                    ),
                 ):
                     raise mapped from exc
         raise AIProviderUnavailableError("Gemini generation failed")
@@ -141,7 +157,11 @@ class GeminiGenerator(AsyncGenerationMixin):
             self._api_key()
             return {"provider": self.name, "configured": True, "model": self.model_name}
         except AIProviderAuthenticationError:
-            return {"provider": self.name, "configured": False, "model": self.model_name}
+            return {
+                "provider": self.name,
+                "configured": False,
+                "model": self.model_name,
+            }
 
 
 def build_gemini_generator(settings: Settings | None = None) -> GenerationProvider:

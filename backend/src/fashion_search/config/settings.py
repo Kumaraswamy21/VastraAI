@@ -53,7 +53,9 @@ class Settings(BaseSettings):
     market_currency: str = Field(default="INR", pattern=r"^[A-Za-z]{3}$")
     cors_origins: str = "http://localhost:3000"
     log_level: str = "INFO"
-    app_environment: str = Field(default="production", pattern=r"^(development|test|production)$")
+    app_environment: str = Field(
+        default="production", pattern=r"^(development|test|production)$"
+    )
     observability_enabled: bool = True
     observability_retention_days: int = Field(default=30, ge=1, le=3650)
     observability_store_raw_queries: bool = False
@@ -77,7 +79,9 @@ class Settings(BaseSettings):
 
     def cors_origin_list(self) -> list[str]:
         """Split the comma-separated CORS origin string into a list."""
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        return [
+            origin.strip() for origin in self.cors_origins.split(",") if origin.strip()
+        ]
 
 
 @lru_cache

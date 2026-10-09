@@ -8,7 +8,12 @@ from fashion_search.core.db import get_engine
 
 def print_group_counts(label: str, column: object) -> None:
     """Print ordered counts for a single catalog dimension."""
-    statement = select(column, func.count()).select_from(Product).group_by(column).order_by(column)
+    statement = (
+        select(column, func.count())
+        .select_from(Product)
+        .group_by(column)
+        .order_by(column)
+    )
     print(f"\n{label}")
     with get_engine().connect() as connection:
         for value, count in connection.execute(statement):
@@ -39,12 +44,22 @@ def print_price_ranges() -> None:
 def main() -> None:
     with get_engine().connect() as connection:
         total = connection.scalar(select(func.count()).select_from(Product)) or 0
-        null_embeddings = connection.scalar(
-            select(func.count()).select_from(Product).where(Product.embedding.is_(None))
-        ) or 0
-        null_search_vectors = connection.scalar(
-            select(func.count()).select_from(Product).where(Product.search_vector.is_(None))
-        ) or 0
+        null_embeddings = (
+            connection.scalar(
+                select(func.count())
+                .select_from(Product)
+                .where(Product.embedding.is_(None))
+            )
+            or 0
+        )
+        null_search_vectors = (
+            connection.scalar(
+                select(func.count())
+                .select_from(Product)
+                .where(Product.search_vector.is_(None))
+            )
+            or 0
+        )
     print(f"total: {total}")
     print(f"null_embeddings: {null_embeddings}")
     print(f"null_search_vectors: {null_search_vectors}")

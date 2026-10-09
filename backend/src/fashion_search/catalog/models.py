@@ -32,7 +32,9 @@ class Product(Base):
     price_inr: Mapped[int] = mapped_column(Integer, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     image_reference: Mapped[str] = mapped_column(String(512), nullable=False)
-    slug: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    slug: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True, index=True
+    )
     # Unbounded pgvector permits independently configured provider dimensions.
     # Provider/model/dimension metadata prevents cross-space comparisons.
     embedding: Mapped[list[float] | None] = mapped_column(Vector(), nullable=True)
@@ -41,8 +43,12 @@ class Product(Base):
     embedding_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
     embedding_dimensions: Mapped[int | None] = mapped_column(Integer, nullable=True)
     embedding_text_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    embedding_status: Mapped[str] = mapped_column(String(16), nullable=False, default="PENDING")
-    embedding_generated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    embedding_status: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="PENDING"
+    )
+    embedding_generated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     embedding_error: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     __table_args__ = (

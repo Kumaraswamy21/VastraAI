@@ -57,19 +57,19 @@ export function HealthStatus() {
 
 function HealthBody({ state }: { state: LoadState }) {
   if (state.kind === "loading") {
-    return <p className="mt-1 text-sm text-zinc-500">Checking backend and Neon…</p>;
+    return <p className="mt-1 text-sm text-zinc-500">Checking backend and database…</p>;
   }
   if (state.kind === "error") {
     return (
       <p className="mt-1 text-sm text-red-700">
-        Backend: error. Neon: unknown. {state.message}
+        Backend: error. Database: unknown. {state.message}
       </p>
     );
   }
   return (
     <div className="mt-2 flex flex-wrap gap-2">
       <StatusPill label="Backend" value={state.health.backend} />
-      <StatusPill label="Neon" value={state.health.database} />
+      <StatusPill label="Database" value={state.health.database} />
     </div>
   );
 }

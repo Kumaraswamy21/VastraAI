@@ -4,7 +4,16 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import BigInteger, Boolean, DateTime, Float, Integer, Numeric, String, Text
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    DateTime,
+    Float,
+    Integer,
+    Numeric,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -31,7 +40,9 @@ class AIProviderEvent(Base):
     error_type: Mapped[str | None] = mapped_column(String(80))
     error_code: Mapped[str | None] = mapped_column(String(80))
     fallback_used: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    event_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSONB, nullable=False, default=dict)
+    event_metadata: Mapped[dict[str, Any]] = mapped_column(
+        "metadata", JSONB, nullable=False, default=dict
+    )
 
 
 class SearchEvent(Base):

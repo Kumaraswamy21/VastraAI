@@ -184,7 +184,9 @@ class GeminiEmbedder(AsyncEmbeddingMixin):
                 time.sleep(delay)
         raise EmbeddingTransientError(str(last_error))
 
-    def _vectors_from_response(self, response: Any, *, expected_count: int) -> list[list[float]]:
+    def _vectors_from_response(
+        self, response: Any, *, expected_count: int
+    ) -> list[list[float]]:
         embeddings = getattr(response, "embeddings", None)
         if not embeddings:
             raise EmbeddingValidationError("Gemini response contained no embeddings")
@@ -240,4 +242,7 @@ def _is_transient(exc: Exception) -> bool:
 
 def _is_auth_error(exc: Exception) -> bool:
     message = str(exc).lower()
-    return any(token in message for token in ("401", "403", "api key", "permission", "unauthenticated"))
+    return any(
+        token in message
+        for token in ("401", "403", "api key", "permission", "unauthenticated")
+    )

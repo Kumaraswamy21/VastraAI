@@ -34,13 +34,26 @@ def upgrade() -> None:
         sa.Column("pricing_effective_date", sa.String(10)),
         sa.Column("error_type", sa.String(80)),
         sa.Column("error_code", sa.String(80)),
-        sa.Column("fallback_used", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("metadata", postgresql.JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
+        sa.Column(
+            "fallback_used", sa.Boolean(), nullable=False, server_default=sa.false()
+        ),
+        sa.Column(
+            "metadata",
+            postgresql.JSONB(),
+            nullable=False,
+            server_default=sa.text("'{}'::jsonb"),
+        ),
     )
     op.create_index("ix_ai_events_timestamp", "ai_provider_events", ["timestamp"])
-    op.create_index("ix_ai_events_provider_model", "ai_provider_events", ["provider", "model"])
-    op.create_index("ix_ai_events_operation_outcome", "ai_provider_events", ["operation", "outcome"])
-    op.create_index("ix_ai_events_search_request", "ai_provider_events", ["search_request_id"])
+    op.create_index(
+        "ix_ai_events_provider_model", "ai_provider_events", ["provider", "model"]
+    )
+    op.create_index(
+        "ix_ai_events_operation_outcome", "ai_provider_events", ["operation", "outcome"]
+    )
+    op.create_index(
+        "ix_ai_events_search_request", "ai_provider_events", ["search_request_id"]
+    )
 
     op.create_table(
         "search_events",
@@ -62,7 +75,9 @@ def upgrade() -> None:
         sa.Column("final_result_count", sa.Integer()),
         sa.Column("generation_provider", sa.String(32)),
         sa.Column("embedding_provider", sa.String(32)),
-        sa.Column("fallback_used", sa.Boolean(), nullable=False, server_default=sa.false()),
+        sa.Column(
+            "fallback_used", sa.Boolean(), nullable=False, server_default=sa.false()
+        ),
         sa.Column("semantic_search_available", sa.Boolean(), nullable=False),
         sa.Column("error_type", sa.String(80)),
         sa.Column("query_hash", sa.String(64)),
@@ -70,7 +85,9 @@ def upgrade() -> None:
         sa.UniqueConstraint("request_id", name="uq_search_events_request_id"),
     )
     op.create_index("ix_search_events_timestamp", "search_events", ["timestamp"])
-    op.create_index("ix_search_events_mode_outcome", "search_events", ["search_mode", "outcome"])
+    op.create_index(
+        "ix_search_events_mode_outcome", "search_events", ["search_mode", "outcome"]
+    )
     op.create_index("ix_search_events_session", "search_events", ["session_id"])
 
 

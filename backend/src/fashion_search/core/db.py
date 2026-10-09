@@ -1,4 +1,4 @@
-"""Small helpers for connecting to Neon PostgreSQL over SSL."""
+"""Small helpers for connecting to PostgreSQL."""
 
 from functools import lru_cache
 
@@ -25,7 +25,7 @@ def ensure_sslmode(database_url: str) -> str:
 
 
 def engine_from_url(url: str) -> Engine:
-    """Build a SQLAlchemy engine from a Neon-ready URL."""
+    """Build a SQLAlchemy engine from the configured PostgreSQL URL."""
     return create_engine(
         ensure_sslmode(sqlalchemy_url(url)),
         pool_pre_ping=True,

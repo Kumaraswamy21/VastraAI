@@ -28,7 +28,9 @@ class OllamaGemmaGenerator(AsyncGenerationMixin):
 
     name = "ollama"
 
-    def __init__(self, settings: Settings | None = None, client: Any | None = None) -> None:
+    def __init__(
+        self, settings: Settings | None = None, client: Any | None = None
+    ) -> None:
         self._settings = settings or get_settings()
         self.model_name = self._settings.ollama_generation_model
         self._client = client
@@ -69,7 +71,9 @@ class OllamaGemmaGenerator(AsyncGenerationMixin):
         try:
             return schema.model_validate_json(data.get("response", ""))
         except (ValidationError, json.JSONDecodeError, TypeError, ValueError) as exc:
-            raise AIProviderResponseError("Ollama returned invalid structured output") from exc
+            raise AIProviderResponseError(
+                "Ollama returned invalid structured output"
+            ) from exc
 
     def _post(self, path: str, payload: dict[str, object]) -> dict[str, Any]:
         started = time.perf_counter()
@@ -82,11 +86,15 @@ class OllamaGemmaGenerator(AsyncGenerationMixin):
             self._last_usage = AIUsage(
                 input_tokens=input_tokens if isinstance(input_tokens, int) else None,
                 output_tokens=output_tokens if isinstance(output_tokens, int) else None,
-                total_tokens=(input_tokens + output_tokens) if isinstance(input_tokens, int) and isinstance(output_tokens, int) else None,
+                total_tokens=(input_tokens + output_tokens)
+                if isinstance(input_tokens, int) and isinstance(output_tokens, int)
+                else None,
             )
             logger.info(
                 "generation_request provider=%s model=%s latency_ms=%.1f",
-                self.name, self.model_name, (time.perf_counter() - started) * 1000,
+                self.name,
+                self.model_name,
+                (time.perf_counter() - started) * 1000,
             )
             return data
         except httpx.TimeoutException as exc:
@@ -96,7 +104,9 @@ class OllamaGemmaGenerator(AsyncGenerationMixin):
         except httpx.HTTPStatusError as exc:
             if exc.response.status_code == 404:
                 raise AIProviderUnavailableError("Ollama model is unavailable") from exc
-            raise AIProviderResponseError(f"Ollama HTTP {exc.response.status_code}") from exc
+            raise AIProviderResponseError(
+                f"Ollama HTTP {exc.response.status_code}"
+            ) from exc
         except (ValueError, TypeError) as exc:
             raise AIProviderResponseError("Ollama returned invalid JSON") from exc
 
@@ -106,14 +116,18 @@ class OllamaGemmaGenerator(AsyncGenerationMixin):
             response.raise_for_status()
             names = {item.get("name") for item in response.json().get("models", [])}
             return {
-                "provider": self.name, "configured": True,
-                "reachable": True, "model": self.model_name,
+                "provider": self.name,
+                "configured": True,
+                "reachable": True,
+                "model": self.model_name,
                 "model_available": self.model_name in names,
             }
         except Exception:
             return {
-                "provider": self.name, "configured": True,
-                "reachable": False, "model": self.model_name,
+                "provider": self.name,
+                "configured": True,
+                "reachable": False,
+                "model": self.model_name,
                 "model_available": False,
             }
 

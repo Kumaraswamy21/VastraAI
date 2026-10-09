@@ -30,8 +30,14 @@ def reciprocal_rank_fusion(
     Each input list is ``(product_id, score)`` in best-first order.
     Ranks are 1-based positions within each list.
     """
-    semantic_ranks = {product_id: (index + 1, score) for index, (product_id, score) in enumerate(semantic)}
-    keyword_ranks = {product_id: (index + 1, score) for index, (product_id, score) in enumerate(keyword)}
+    semantic_ranks = {
+        product_id: (index + 1, score)
+        for index, (product_id, score) in enumerate(semantic)
+    }
+    keyword_ranks = {
+        product_id: (index + 1, score)
+        for index, (product_id, score) in enumerate(keyword)
+    }
     product_ids = sorted(set(semantic_ranks) | set(keyword_ranks))
 
     fused: list[RankedCandidate] = []

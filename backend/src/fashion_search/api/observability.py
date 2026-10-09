@@ -22,7 +22,11 @@ def require_dashboard(settings: Settings = Depends(get_settings)) -> None:
 
 
 def since_for(value: Range) -> datetime:
-    delta = {"1h": timedelta(hours=1), "24h": timedelta(hours=24), "7d": timedelta(days=7)}[value]
+    delta = {
+        "1h": timedelta(hours=1),
+        "24h": timedelta(hours=24),
+        "7d": timedelta(days=7),
+    }[value]
     return datetime.now(timezone.utc) - delta
 
 
@@ -33,15 +37,22 @@ def summary(range: Range = "24h"):
 
 @router.get("/providers", dependencies=[Depends(require_dashboard)])
 def providers(
-    range: Range = "24h", provider: str | None = Query(default=None, max_length=32),
+    range: Range = "24h",
+    provider: str | None = Query(default=None, max_length=32),
     model: str | None = Query(default=None, max_length=160),
     operation: str | None = Query(default=None, max_length=40),
     outcome: str | None = Query(default=None, max_length=32),
 ):
-    filters = {"provider": provider, "model": model, "operation": operation, "outcome": outcome}
+    filters = {
+        "provider": provider,
+        "model": model,
+        "operation": operation,
+        "outcome": outcome,
+    }
     since = since_for(range)
     return {
-        "range": range, "breakdown": repository.providers(since, filters),
+        "range": range,
+        "breakdown": repository.providers(since, filters),
         "recent": repository.recent_providers(since, filters),
     }
 

@@ -14,8 +14,12 @@ from fashion_search.observability.context import request_id, search_request_id_v
 from fashion_search.observability.repository import repository as telemetry_repository
 from fashion_search.observability.schemas import SearchEventData
 from fashion_search.search.conversation import (
-    FollowUpInterpreter, RevisionConflictError, SearchStateReducer,
-    StateTransitionError, active_filters, initial_search_state,
+    FollowUpInterpreter,
+    RevisionConflictError,
+    SearchStateReducer,
+    StateTransitionError,
+    active_filters,
+    initial_search_state,
 )
 
 from fashion_search.search.schemas import (
@@ -40,8 +44,12 @@ logger = get_logger(__name__)
 
 
 def _record_search(
-    result: HybridSearchResponse | None, *, started: float, session_id: str | None,
-    query: str, error_type: str | None = None,
+    result: HybridSearchResponse | None,
+    *,
+    started: float,
+    session_id: str | None,
+    query: str,
+    error_type: str | None = None,
 ) -> str:
     identifier = search_request_id_var.get() or request_id()
     cfg = get_settings()
@@ -49,14 +57,22 @@ def _record_search(
     mode = result.search_mode.upper() if result else "FAILED"
     fallback = bool(metrics.get("fallback")) if result else False
     event = SearchEventData(
-        request_id=identifier, session_id=session_id, search_mode=mode,
-        outcome=("SUCCESS" if result and result.search_status == "success" else
-                 "ZERO_RESULTS" if result and result.total == 0 else "FAILED"),
+        request_id=identifier,
+        session_id=session_id,
+        search_mode=mode,
+        outcome=(
+            "SUCCESS"
+            if result and result.search_status == "success"
+            else "ZERO_RESULTS"
+            if result and result.total == 0
+            else "FAILED"
+        ),
         total_latency_ms=(time.perf_counter() - started) * 1000,
         constraint_parsing_ms=metrics.get("parse_ms"),
         query_embedding_ms=metrics.get("embed_ms"),
         semantic_search_ms=metrics.get("semantic_ms"),
-        keyword_search_ms=metrics.get("keyword_ms"), fusion_ms=metrics.get("fusion_ms"),
+        keyword_search_ms=metrics.get("keyword_ms"),
+        fusion_ms=metrics.get("fusion_ms"),
         explanation_ms=metrics.get("explanation_ms"),
         semantic_candidate_count=metrics.get("semantic_candidates"),
         keyword_candidate_count=metrics.get("keyword_candidates"),
@@ -72,7 +88,9 @@ def _record_search(
     try:
         telemetry_repository.record_search(event)
     except Exception as exc:
-        logger.warning("telemetry_search_write_failed error_type=%s", type(exc).__name__)
+        logger.warning(
+            "telemetry_search_write_failed error_type=%s", type(exc).__name__
+        )
     return identifier
 
 
@@ -133,39 +151,69 @@ def search_catalog(body: SearchRequest) -> ConversationalSearchResponse:
                 else FollowUpInterpreter(GenerationRouter()).interpret(message, current)
             )
             state = SearchStateReducer().apply(
-                current, refinement, message=message,
-                expected_revision=body.expected_revision if body.expected_revision is not None else -1,
+                current,
+                refinement,
+                message=message,
+                expected_revision=body.expected_revision
+                if body.expected_revision is not None
+                else -1,
             )
             search_session_store.commit(
                 session_id, state, expected_revision=current.revision
             )
             interpreted_as = "new_search" if refinement.reset_search else "refinement"
 
-        semantic_query = " ".join([state.semantic_query, *state.semantic_modifiers]).strip()
+        semantic_query = " ".join(
+            [state.semantic_query, *state.semantic_modifiers]
+        ).strip()
         result = hybrid_search(
             HybridSearchRequest(query=state.current_query, limit=body.limit),
             resolved_constraints=state.constraints,
             resolved_query=semantic_query,
             sort_preference=state.sort_preference,
         )
-        result_payload = result.model_dump() if hasattr(result, "model_dump") else vars(result)
+        result_payload = (
+            result.model_dump() if hasattr(result, "model_dump") else vars(result)
+        )
         result_payload.pop("request_id", None)
         identifier = _record_search(
             result, started=started, session_id=session_id, query=message
         )
         return ConversationalSearchResponse(
-            **result_payload, session_id=session_id, revision=state.revision,
-            interpreted_as=interpreted_as, state=state, active_filters=active_filters(state),
+            **result_payload,
+            session_id=session_id,
+            revision=state.revision,
+            interpreted_as=interpreted_as,
+            state=state,
+            active_filters=active_filters(state),
             request_id=identifier,
         )
     except RevisionConflictError as exc:
-        _record_search(None, started=started, session_id=session_id, query=message, error_type="REVISION_CONFLICT")
+        _record_search(
+            None,
+            started=started,
+            session_id=session_id,
+            query=message,
+            error_type="REVISION_CONFLICT",
+        )
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except StateTransitionError as exc:
-        _record_search(None, started=started, session_id=session_id, query=message, error_type="INVALID_SEARCH_STATE")
+        _record_search(
+            None,
+            started=started,
+            session_id=session_id,
+            query=message,
+            error_type="INVALID_SEARCH_STATE",
+        )
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except HybridSearchError as exc:
-        _record_search(None, started=started, session_id=session_id, query=message, error_type="SEARCH_ERROR")
+        _record_search(
+            None,
+            started=started,
+            session_id=session_id,
+            query=message,
+            error_type="SEARCH_ERROR",
+        )
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
 
@@ -182,7 +230,13 @@ def search_hybrid(body: HybridSearchRequest) -> HybridSearchResponse:
         )
         return result
     except HybridSearchError as exc:
-        _record_search(None, started=started, session_id=None, query=body.query, error_type="SEARCH_ERROR")
+        _record_search(
+            None,
+            started=started,
+            session_id=None,
+            query=body.query,
+            error_type="SEARCH_ERROR",
+        )
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
 

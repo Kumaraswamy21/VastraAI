@@ -66,7 +66,9 @@ def apply_filters(stmt: Stmt, query: ProductListQuery) -> Stmt:
     return stmt
 
 
-def apply_sort(stmt: Select[tuple[Product]], sort: SortOption) -> Select[tuple[Product]]:
+def apply_sort(
+    stmt: Select[tuple[Product]], sort: SortOption
+) -> Select[tuple[Product]]:
     """Sort by insert order (id) or unit price."""
     if sort == "price_asc":
         return stmt.order_by(Product.price_inr.asc(), Product.id.asc())

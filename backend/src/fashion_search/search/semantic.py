@@ -19,7 +19,11 @@ from fashion_search.search.schemas import (
     SemanticSearchRequest,
     SemanticSearchResponse,
 )
-from fashion_search.search.vector import VectorHit, embedding_index_status, search_by_vector
+from fashion_search.search.vector import (
+    VectorHit,
+    embedding_index_status,
+    search_by_vector,
+)
 
 logger = get_logger(__name__)
 
@@ -71,7 +75,8 @@ def semantic_search(
     query = normalize_query(request.query)
     worker = embedder or get_embedding_provider(cfg)
     provider_name = (
-        worker.name if isinstance(getattr(worker, "name", None), str)
+        worker.name
+        if isinstance(getattr(worker, "name", None), str)
         else getattr(cfg, "embedding_provider", "gemini")
     )
     model_name = (
@@ -92,7 +97,9 @@ def semantic_search(
             )
         except Exception as exc:
             logger.exception("embedding_index_status_failed provider=%s", provider_name)
-            raise SemanticSearchError("embedding index status unavailable", status_code=503) from exc
+            raise SemanticSearchError(
+                "embedding index status unavailable", status_code=503
+            ) from exc
         if index_status != "ready":
             raise SemanticSearchError(
                 f"embedding index is {index_status}; re-embed the catalog for {provider_name}",

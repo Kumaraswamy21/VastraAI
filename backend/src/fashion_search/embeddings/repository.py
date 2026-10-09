@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import or_, select, update
+from sqlalchemy import bindparam, or_, select, update
 from sqlalchemy.orm import Session
 
 from fashion_search.catalog.models import Product
@@ -56,7 +56,9 @@ def needs_embedding(
 def recover_stale_processing(settings: Settings | None = None) -> int:
     """Reset interrupted PROCESSING rows so the pipeline can retry them."""
     cfg = settings or get_settings()
-    cutoff = datetime.now(UTC) - timedelta(minutes=cfg.embedding_stale_processing_minutes)
+    cutoff = datetime.now(UTC) - timedelta(
+        minutes=cfg.embedding_stale_processing_minutes
+    )
     statement = (
         update(Product)
         .where(Product.embedding_status == "PROCESSING")
@@ -144,6 +146,29 @@ def save_completed(
     )
     with get_engine().begin() as connection:
         connection.execute(statement)
+
+
+def save_completed_batch(rows: list[dict[str, Any]]) -> None:
+    """Persist one provider batch with a single database round trip."""
+    if not rows:
+        return
+    statement = (
+        update(Product)
+        .where(Product.id == bindparam("target_id"))
+        .values(
+            embedding=bindparam("vector"),
+            embedding_provider=bindparam("provider"),
+            embedding_model=bindparam("model"),
+            embedding_dimensions=bindparam("dimensions"),
+            embedding_text_hash=bindparam("text_digest"),
+            embedding_status="COMPLETED",
+            embedding_generated_at=bindparam("generated_at"),
+            embedding_error=None,
+        )
+    )
+    payload = [{**row, "generated_at": datetime.now(UTC)} for row in rows]
+    with get_engine().begin() as connection:
+        connection.execute(statement, payload)
 
 
 def save_failed(product_id: int, error: str) -> None:

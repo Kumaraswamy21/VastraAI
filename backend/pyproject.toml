@@ -15,11 +15,16 @@ dependencies = [
   "google-genai>=1.0.0",
 ]
 
+[project.optional-dependencies]
+dev = ["ruff==0.12.0"]
+
 [project.scripts]
 seed-catalog = "fashion_search.catalog.seed:main"
 verify-catalog = "fashion_search.catalog.verify:main"
 embed-catalog = "fashion_search.embeddings.cli:main"
 cleanup-observability = "fashion_search.observability.cleanup:main"
+fashion-eval = "fashion_search.evaluation.runner:main"
+fashion-eval-compare = "fashion_search.evaluation.compare:main"
 
 [build-system]
 requires = ["hatchling"]

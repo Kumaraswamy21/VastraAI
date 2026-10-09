@@ -1,4 +1,4 @@
-"""Liveness and Neon connectivity endpoint."""
+"""Liveness and PostgreSQL connectivity endpoint."""
 
 from fastapi import APIRouter
 
@@ -10,7 +10,7 @@ logger = get_logger(__name__)
 
 
 def database_status() -> str:
-    """Ping Neon; return ok or error without raising to the client."""
+    """Ping PostgreSQL; return ok or error without raising to the client."""
     try:
         ping_database(get_engine())
         return "ok"
@@ -26,7 +26,7 @@ def overall_status(database: str) -> str:
 
 @router.get("/health")
 def health() -> dict[str, str]:
-    """Return backend liveness and Neon database connectivity."""
+    """Return backend liveness and PostgreSQL connectivity."""
     database = database_status()
     return {
         "status": overall_status(database),

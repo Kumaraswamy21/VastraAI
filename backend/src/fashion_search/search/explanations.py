@@ -20,30 +20,46 @@ class ProductMetadata(Protocol):
 
 
 def _same(actual: str | None, expected: str | None) -> bool:
-    return actual is not None and expected is not None and actual.casefold() == expected.casefold()
+    return (
+        actual is not None
+        and expected is not None
+        and actual.casefold() == expected.casefold()
+    )
 
 
-def matches_category(product: ProductMetadata, constraints: FashionSearchConstraints) -> bool:
+def matches_category(
+    product: ProductMetadata, constraints: FashionSearchConstraints
+) -> bool:
     return _same(product.category, constraints.category)
 
 
-def matches_color(product: ProductMetadata, constraints: FashionSearchConstraints) -> bool:
+def matches_color(
+    product: ProductMetadata, constraints: FashionSearchConstraints
+) -> bool:
     return _same(product.color, constraints.color)
 
 
-def matches_occasion(product: ProductMetadata, constraints: FashionSearchConstraints) -> bool:
+def matches_occasion(
+    product: ProductMetadata, constraints: FashionSearchConstraints
+) -> bool:
     return _same(product.occasion, constraints.occasion)
 
 
-def matches_size(product: ProductMetadata, constraints: FashionSearchConstraints) -> bool:
+def matches_size(
+    product: ProductMetadata, constraints: FashionSearchConstraints
+) -> bool:
     return constraints.size is not None and constraints.size in (product.sizes or [])
 
 
-def matches_gender(product: ProductMetadata, constraints: FashionSearchConstraints) -> bool:
+def matches_gender(
+    product: ProductMetadata, constraints: FashionSearchConstraints
+) -> bool:
     return _same(product.gender, constraints.gender)
 
 
-def matches_price(product: ProductMetadata, constraints: FashionSearchConstraints) -> bool:
+def matches_price(
+    product: ProductMetadata, constraints: FashionSearchConstraints
+) -> bool:
     price = Decimal(product.price_inr)
     if constraints.price_min is not None:
         if constraints.price_min_inclusive and price < constraints.price_min:
@@ -68,12 +84,16 @@ MATCHERS = (
 )
 
 
-def matched_constraints(product: ProductMetadata, constraints: FashionSearchConstraints) -> list[str]:
+def matched_constraints(
+    product: ProductMetadata, constraints: FashionSearchConstraints
+) -> list[str]:
     """Return only explicit constraints verified against structured metadata."""
     return [name for name, matcher in MATCHERS if matcher(product, constraints)]
 
 
-def all_hard_constraints_match(product: ProductMetadata, constraints: FashionSearchConstraints) -> bool:
+def all_hard_constraints_match(
+    product: ProductMetadata, constraints: FashionSearchConstraints
+) -> bool:
     active = {
         "category": constraints.category is not None,
         "color": constraints.color is not None,
@@ -115,11 +135,20 @@ def classify_match_quality(
         and ranked.keyword_rank_score >= thresholds.min_keyword
     )
     both = ranked.semantic_rank is not None and ranked.keyword_rank is not None
-    if both and keyword_ok and semantic is not None and semantic >= thresholds.weak_semantic:
+    if (
+        both
+        and keyword_ok
+        and semantic is not None
+        and semantic >= thresholds.weak_semantic
+    ):
         return "strong"
     if semantic is not None and semantic >= thresholds.strong_semantic:
         return "strong"
-    if both or keyword_ok or (semantic is not None and semantic >= thresholds.weak_semantic):
+    if (
+        both
+        or keyword_ok
+        or (semantic is not None and semantic >= thresholds.weak_semantic)
+    ):
         return "good"
     return "weak"
 
@@ -159,10 +188,14 @@ class MatchExplanationBuilder:
                 detail = f"{price}, within your {_money(constraints.price_min)}–{_money(constraints.price_max)} range"
             elif constraints.price_max is not None:
                 relation = "within" if constraints.price_max_inclusive else "below"
-                detail = f"{price}, {relation} your {_money(constraints.price_max)} budget"
+                detail = (
+                    f"{price}, {relation} your {_money(constraints.price_max)} budget"
+                )
             else:
                 relation = "meeting" if constraints.price_min_inclusive else "above"
-                detail = f"{price}, {relation} your {_money(constraints.price_min)} minimum"
+                detail = (
+                    f"{price}, {relation} your {_money(constraints.price_min)} minimum"
+                )
             if sentences:
                 sentences[0] += f" and costs {detail}"
             else:

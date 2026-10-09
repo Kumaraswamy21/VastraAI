@@ -1,0 +1,5521 @@
+{
+  "run_metadata": {
+    "dataset_version": "fashion-search-v1",
+    "catalog_snapshot_id": "synthetic-seed-20261007-count-750-v1",
+    "catalog_snapshot_sha256": "eb804e475515946fa7919f8fe3a509cfab49759f16725c03b1058c07054ab8af",
+    "catalog_product_count": 750,
+    "catalog_seed": 20261007,
+    "catalog_generated_count": 750,
+    "timestamp_utc": "2026-10-09T13:56:58.585171+00:00",
+    "git_commit": "1dc13da9ea76f30a7f66964ab3dd15bf70fa86dc",
+    "git_worktree_dirty": true,
+    "provider_mode": "offline_keyword",
+    "generation_provider_configured": "gemini",
+    "generation_model_configured": "gemini-2.5-flash-lite",
+    "embedding_provider_configured": "gemini",
+    "embedding_model_configured": "gemini-embedding-001",
+    "embedding_dimensions": 768,
+    "rrf_k": 60,
+    "semantic_weight": 0.6,
+    "keyword_weight": 0.4,
+    "completed_embeddings": 750,
+    "note": "Offline FTS baseline; no generation or embedding provider was called."
+  },
+  "filter_metrics": {
+    "exact_match_rate": 0.975,
+    "field_accuracy": {
+      "category": 1.0,
+      "color": 1.0,
+      "occasion": 1.0,
+      "size": 0.975,
+      "gender": 1.0,
+      "price_min": 1.0,
+      "price_max": 1.0,
+      "currency": 1.0,
+      "price_min_inclusive": 1.0,
+      "price_max_inclusive": 1.0
+    },
+    "unexpected_constraint_count": 0,
+    "constraint_precision": 1.0,
+    "constraint_recall": 0.99375,
+    "constraint_f1": 0.9964285714285713
+  },
+  "retrieval_metrics": {
+    "judged_query_count": 18,
+    "complete_judgment_query_count": 18,
+    "precision_at_5": 0.8,
+    "recall_at_10": 0.800668308633995,
+    "mrr": 0.9444444444444444,
+    "ndcg_at_5": 0.9444444444444444,
+    "ndcg_at_10": 0.9409099562111692
+  },
+  "constraint_metrics": {
+    "constraint_violation_count": 0,
+    "constraint_violation_rate": 0.0,
+    "returned_product_count": 221
+  },
+  "empty_result_metrics": {
+    "labeled_query_count": 40,
+    "true_empty_count": 9,
+    "false_empty_count": 12,
+    "unexpected_result_count": 0,
+    "empty_result_accuracy": 0.7
+  },
+  "conversation_metrics": {
+    "turn_count": 8,
+    "exact_turn_count": 8,
+    "state_transition_accuracy": 1.0,
+    "details": [
+      {
+        "conversation_id": "c001",
+        "turn": 1,
+        "exact": true,
+        "mismatches": {}
+      },
+      {
+        "conversation_id": "c001",
+        "turn": 2,
+        "exact": true,
+        "mismatches": {}
+      },
+      {
+        "conversation_id": "c001",
+        "turn": 3,
+        "exact": true,
+        "mismatches": {}
+      },
+      {
+        "conversation_id": "c002",
+        "turn": 1,
+        "exact": true,
+        "mismatches": {}
+      },
+      {
+        "conversation_id": "c002",
+        "turn": 2,
+        "exact": true,
+        "mismatches": {}
+      },
+      {
+        "conversation_id": "c002",
+        "turn": 3,
+        "exact": true,
+        "mismatches": {}
+      },
+      {
+        "conversation_id": "c003",
+        "turn": 1,
+        "exact": true,
+        "mismatches": {}
+      },
+      {
+        "conversation_id": "c003",
+        "turn": 2,
+        "exact": true,
+        "mismatches": {}
+      }
+    ]
+  },
+  "explanation_metrics": {
+    "explanation_present_rate": 1.0,
+    "unsupported_claim_count": 0
+  },
+  "latency": {
+    "total": {
+      "count": 40,
+      "mean_ms": 1193.6965614499059,
+      "median_ms": 1181.3837499939837,
+      "p50_ms": 1181.3837499939837,
+      "p95_ms": 1319.826239615213,
+      "max_ms": 1436.576292006066
+    },
+    "stages": {
+      "constraint_parsing_ms": {
+        "count": 40,
+        "mean_ms": 1.1623415484791622,
+        "median_ms": 0.8226664940593764,
+        "p50_ms": 0.8226664940593764,
+        "p95_ms": 3.1480170058784966,
+        "max_ms": 5.118874978506938
+      },
+      "explanation_ms": {
+        "count": 40,
+        "mean_ms": 0.1706613998976536,
+        "median_ms": 0.005708017852157354,
+        "p50_ms": 0.005708017852157354,
+        "p95_ms": 0.9356694266898556,
+        "max_ms": 1.226749998750165
+      },
+      "fusion_ms": {
+        "count": 40,
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p50_ms": 0.0,
+        "p95_ms": 0.0,
+        "max_ms": 0.0
+      },
+      "keyword_search_ms": {
+        "count": 40,
+        "mean_ms": 1192.0051990535285,
+        "median_ms": 1178.1145830027526,
+        "p50_ms": 1178.1145830027526,
+        "p95_ms": 1318.2923146014216,
+        "max_ms": 1435.1392090029549
+      }
+    }
+  },
+  "query_count": 40,
+  "details": [
+    {
+      "query_id": "q001",
+      "query": "black dress",
+      "query_type": [
+        "simple",
+        "category",
+        "color"
+      ],
+      "expected_filters": {
+        "category": "dress",
+        "color": "black",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "dress",
+        "color": "black",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "170": 3,
+        "230": 3,
+        "350": 3,
+        "470": 3,
+        "590": 3
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        230,
+        470,
+        170,
+        350,
+        590
+      ],
+      "ranking": [
+        {
+          "product_id": 230,
+          "rank": 1,
+          "relevance": 3
+        },
+        {
+          "product_id": 470,
+          "rank": 2,
+          "relevance": 3
+        },
+        {
+          "product_id": 170,
+          "rank": 3,
+          "relevance": 3
+        },
+        {
+          "product_id": 350,
+          "rank": 4,
+          "relevance": 3
+        },
+        {
+          "product_id": 590,
+          "rank": 5,
+          "relevance": 3
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 5,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 5,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 5,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1183.7609579961281,
+        "constraint_parsing_ms": 4.477542010135949,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1178.613583004335,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.24620798649266362
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q002",
+      "query": "blue shirt",
+      "query_type": [
+        "simple",
+        "category",
+        "color"
+      ],
+      "expected_filters": {
+        "category": "shirt",
+        "color": "blue",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "shirt",
+        "color": "blue",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": true,
+      "actual_result_count": 0,
+      "empty_classification": "true_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1226.444875006564,
+        "constraint_parsing_ms": 0.9974999993573874,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1225.1856660004705,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.00454098335467279
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q003",
+      "query": "white sneakers",
+      "query_type": [
+        "simple",
+        "category-synonym",
+        "color"
+      ],
+      "expected_filters": {
+        "category": "footwear",
+        "color": "white",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "footwear",
+        "color": "white",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "135": 0,
+        "150": 0,
+        "195": 0,
+        "344": 1,
+        "375": 0,
+        "479": 0,
+        "495": 0,
+        "510": 0,
+        "555": 0,
+        "659": 3,
+        "660": 0,
+        "674": 0,
+        "735": 0
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        659,
+        344
+      ],
+      "ranking": [
+        {
+          "product_id": 659,
+          "rank": 1,
+          "relevance": 3
+        },
+        {
+          "product_id": 344,
+          "rank": 2,
+          "relevance": 1
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 0.4,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 2,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 2,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 2,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1194.0232919878326,
+        "constraint_parsing_ms": 0.6748749874532223,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1192.4859579885378,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.19162497483193874
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q004",
+      "query": "black dress under ₹4000",
+      "query_type": [
+        "price",
+        "multi-constraint"
+      ],
+      "expected_filters": {
+        "category": "dress",
+        "color": "black",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": "4000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "actual_filters": {
+        "category": "dress",
+        "color": "black",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": "4000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "170": 3,
+        "230": 3,
+        "350": 3,
+        "470": 3,
+        "590": 3
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        230,
+        470,
+        170,
+        350,
+        590
+      ],
+      "ranking": [
+        {
+          "product_id": 230,
+          "rank": 1,
+          "relevance": 3
+        },
+        {
+          "product_id": 470,
+          "rank": 2,
+          "relevance": 3
+        },
+        {
+          "product_id": 170,
+          "rank": 3,
+          "relevance": 3
+        },
+        {
+          "product_id": 350,
+          "rank": 4,
+          "relevance": 3
+        },
+        {
+          "product_id": 590,
+          "rank": 5,
+          "relevance": 3
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 5,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 5,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 5,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1144.9190420098603,
+        "constraint_parsing_ms": 1.6169580048881471,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1142.046749999281,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.9800420084502548
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q005",
+      "query": "shirts below 2k",
+      "query_type": [
+        "price",
+        "synonym"
+      ],
+      "expected_filters": {
+        "category": "shirt",
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": "2000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "actual_filters": {
+        "category": "shirt",
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": "2000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "21": 2,
+        "36": 2,
+        "81": 2,
+        "111": 2,
+        "141": 2,
+        "216": 2,
+        "276": 2,
+        "291": 2,
+        "321": 2,
+        "336": 2,
+        "351": 2,
+        "396": 2,
+        "426": 2,
+        "486": 2,
+        "501": 2,
+        "576": 2,
+        "666": 2,
+        "696": 2,
+        "711": 2,
+        "741": 2
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        21,
+        36,
+        81,
+        111,
+        141,
+        216,
+        276,
+        291,
+        321,
+        336,
+        351,
+        396,
+        426,
+        486,
+        501,
+        576,
+        666,
+        696,
+        711,
+        741
+      ],
+      "ranking": [
+        {
+          "product_id": 21,
+          "rank": 1,
+          "relevance": 2
+        },
+        {
+          "product_id": 36,
+          "rank": 2,
+          "relevance": 2
+        },
+        {
+          "product_id": 81,
+          "rank": 3,
+          "relevance": 2
+        },
+        {
+          "product_id": 111,
+          "rank": 4,
+          "relevance": 2
+        },
+        {
+          "product_id": 141,
+          "rank": 5,
+          "relevance": 2
+        },
+        {
+          "product_id": 216,
+          "rank": 6,
+          "relevance": 2
+        },
+        {
+          "product_id": 276,
+          "rank": 7,
+          "relevance": 2
+        },
+        {
+          "product_id": 291,
+          "rank": 8,
+          "relevance": 2
+        },
+        {
+          "product_id": 321,
+          "rank": 9,
+          "relevance": 2
+        },
+        {
+          "product_id": 336,
+          "rank": 10,
+          "relevance": 2
+        },
+        {
+          "product_id": 351,
+          "rank": 11,
+          "relevance": 2
+        },
+        {
+          "product_id": 396,
+          "rank": 12,
+          "relevance": 2
+        },
+        {
+          "product_id": 426,
+          "rank": 13,
+          "relevance": 2
+        },
+        {
+          "product_id": 486,
+          "rank": 14,
+          "relevance": 2
+        },
+        {
+          "product_id": 501,
+          "rank": 15,
+          "relevance": 2
+        },
+        {
+          "product_id": 576,
+          "rank": 16,
+          "relevance": 2
+        },
+        {
+          "product_id": 666,
+          "rank": 17,
+          "relevance": 2
+        },
+        {
+          "product_id": 696,
+          "rank": 18,
+          "relevance": 2
+        },
+        {
+          "product_id": 711,
+          "rank": 19,
+          "relevance": 2
+        },
+        {
+          "product_id": 741,
+          "rank": 20,
+          "relevance": 2
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 1.0,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 20,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 20,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 20,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1131.8495410087053,
+        "constraint_parsing_ms": 1.396375009790063,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1130.1234160200693,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.19454100402072072
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q006",
+      "query": "footwear between ₹2000 and ₹5000",
+      "query_type": [
+        "price",
+        "range"
+      ],
+      "expected_filters": {
+        "category": "footwear",
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": "2000",
+        "price_max": "5000",
+        "currency": "INR",
+        "price_min_inclusive": true,
+        "price_max_inclusive": true
+      },
+      "actual_filters": {
+        "category": "footwear",
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": "2000",
+        "price_max": "5000",
+        "currency": "INR",
+        "price_min_inclusive": true,
+        "price_max_inclusive": true
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "15": 2,
+        "29": 2,
+        "44": 2,
+        "45": 2,
+        "60": 2,
+        "74": 2,
+        "75": 2,
+        "90": 2,
+        "104": 2,
+        "120": 2,
+        "134": 2,
+        "135": 2,
+        "149": 2,
+        "150": 2,
+        "164": 2,
+        "165": 2,
+        "179": 2,
+        "180": 2,
+        "194": 2,
+        "210": 2,
+        "225": 2,
+        "239": 2,
+        "240": 2,
+        "254": 2,
+        "284": 2,
+        "285": 2,
+        "300": 2,
+        "315": 2,
+        "330": 2,
+        "344": 2,
+        "345": 2,
+        "359": 2,
+        "360": 2,
+        "374": 2,
+        "375": 2,
+        "390": 2,
+        "404": 2,
+        "405": 2,
+        "419": 2,
+        "420": 2,
+        "434": 2,
+        "449": 2,
+        "450": 2,
+        "465": 2,
+        "479": 2,
+        "494": 2,
+        "495": 2,
+        "509": 2,
+        "524": 2,
+        "525": 2,
+        "539": 2,
+        "555": 2,
+        "569": 2,
+        "570": 2,
+        "584": 2,
+        "599": 2,
+        "600": 2,
+        "675": 2,
+        "689": 2,
+        "705": 2,
+        "719": 2,
+        "749": 2,
+        "750": 2
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        15,
+        29,
+        44,
+        45,
+        60,
+        74,
+        75,
+        90,
+        104,
+        120,
+        134,
+        135,
+        149,
+        150,
+        164,
+        165,
+        179,
+        180,
+        194,
+        210,
+        225,
+        239,
+        240,
+        254,
+        284,
+        285,
+        300,
+        315,
+        330,
+        344,
+        345,
+        359,
+        360,
+        374,
+        375,
+        390,
+        404,
+        405,
+        419,
+        420,
+        434,
+        449,
+        450,
+        465,
+        479,
+        494,
+        495,
+        509,
+        524,
+        525
+      ],
+      "ranking": [
+        {
+          "product_id": 15,
+          "rank": 1,
+          "relevance": 2
+        },
+        {
+          "product_id": 29,
+          "rank": 2,
+          "relevance": 2
+        },
+        {
+          "product_id": 44,
+          "rank": 3,
+          "relevance": 2
+        },
+        {
+          "product_id": 45,
+          "rank": 4,
+          "relevance": 2
+        },
+        {
+          "product_id": 60,
+          "rank": 5,
+          "relevance": 2
+        },
+        {
+          "product_id": 74,
+          "rank": 6,
+          "relevance": 2
+        },
+        {
+          "product_id": 75,
+          "rank": 7,
+          "relevance": 2
+        },
+        {
+          "product_id": 90,
+          "rank": 8,
+          "relevance": 2
+        },
+        {
+          "product_id": 104,
+          "rank": 9,
+          "relevance": 2
+        },
+        {
+          "product_id": 120,
+          "rank": 10,
+          "relevance": 2
+        },
+        {
+          "product_id": 134,
+          "rank": 11,
+          "relevance": 2
+        },
+        {
+          "product_id": 135,
+          "rank": 12,
+          "relevance": 2
+        },
+        {
+          "product_id": 149,
+          "rank": 13,
+          "relevance": 2
+        },
+        {
+          "product_id": 150,
+          "rank": 14,
+          "relevance": 2
+        },
+        {
+          "product_id": 164,
+          "rank": 15,
+          "relevance": 2
+        },
+        {
+          "product_id": 165,
+          "rank": 16,
+          "relevance": 2
+        },
+        {
+          "product_id": 179,
+          "rank": 17,
+          "relevance": 2
+        },
+        {
+          "product_id": 180,
+          "rank": 18,
+          "relevance": 2
+        },
+        {
+          "product_id": 194,
+          "rank": 19,
+          "relevance": 2
+        },
+        {
+          "product_id": 210,
+          "rank": 20,
+          "relevance": 2
+        },
+        {
+          "product_id": 225,
+          "rank": 21,
+          "relevance": 2
+        },
+        {
+          "product_id": 239,
+          "rank": 22,
+          "relevance": 2
+        },
+        {
+          "product_id": 240,
+          "rank": 23,
+          "relevance": 2
+        },
+        {
+          "product_id": 254,
+          "rank": 24,
+          "relevance": 2
+        },
+        {
+          "product_id": 284,
+          "rank": 25,
+          "relevance": 2
+        },
+        {
+          "product_id": 285,
+          "rank": 26,
+          "relevance": 2
+        },
+        {
+          "product_id": 300,
+          "rank": 27,
+          "relevance": 2
+        },
+        {
+          "product_id": 315,
+          "rank": 28,
+          "relevance": 2
+        },
+        {
+          "product_id": 330,
+          "rank": 29,
+          "relevance": 2
+        },
+        {
+          "product_id": 344,
+          "rank": 30,
+          "relevance": 2
+        },
+        {
+          "product_id": 345,
+          "rank": 31,
+          "relevance": 2
+        },
+        {
+          "product_id": 359,
+          "rank": 32,
+          "relevance": 2
+        },
+        {
+          "product_id": 360,
+          "rank": 33,
+          "relevance": 2
+        },
+        {
+          "product_id": 374,
+          "rank": 34,
+          "relevance": 2
+        },
+        {
+          "product_id": 375,
+          "rank": 35,
+          "relevance": 2
+        },
+        {
+          "product_id": 390,
+          "rank": 36,
+          "relevance": 2
+        },
+        {
+          "product_id": 404,
+          "rank": 37,
+          "relevance": 2
+        },
+        {
+          "product_id": 405,
+          "rank": 38,
+          "relevance": 2
+        },
+        {
+          "product_id": 419,
+          "rank": 39,
+          "relevance": 2
+        },
+        {
+          "product_id": 420,
+          "rank": 40,
+          "relevance": 2
+        },
+        {
+          "product_id": 434,
+          "rank": 41,
+          "relevance": 2
+        },
+        {
+          "product_id": 449,
+          "rank": 42,
+          "relevance": 2
+        },
+        {
+          "product_id": 450,
+          "rank": 43,
+          "relevance": 2
+        },
+        {
+          "product_id": 465,
+          "rank": 44,
+          "relevance": 2
+        },
+        {
+          "product_id": 479,
+          "rank": 45,
+          "relevance": 2
+        },
+        {
+          "product_id": 494,
+          "rank": 46,
+          "relevance": 2
+        },
+        {
+          "product_id": 495,
+          "rank": 47,
+          "relevance": 2
+        },
+        {
+          "product_id": 509,
+          "rank": 48,
+          "relevance": 2
+        },
+        {
+          "product_id": 524,
+          "rank": 49,
+          "relevance": 2
+        },
+        {
+          "product_id": 525,
+          "rank": 50,
+          "relevance": 2
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 1.0,
+        "recall_at_10": 0.15873015873015872,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 50,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 50,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 50,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1183.7933330098167,
+        "constraint_parsing_ms": 0.5270419933367521,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1181.141209002817,
+        "fusion_ms": 0.0,
+        "explanation_ms": 1.226749998750165
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q007",
+      "query": "men's blue formal shirt size L under ₹2500",
+      "query_type": [
+        "multi-constraint",
+        "price",
+        "size",
+        "gender"
+      ],
+      "expected_filters": {
+        "category": "shirt",
+        "color": "blue",
+        "occasion": "formal",
+        "size": "L",
+        "gender": "men",
+        "price_min": null,
+        "price_max": "2500",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "actual_filters": {
+        "category": "shirt",
+        "color": "blue",
+        "occasion": "formal",
+        "size": "L",
+        "gender": "men",
+        "price_min": null,
+        "price_max": "2500",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": true,
+      "actual_result_count": 0,
+      "empty_classification": "true_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1160.7825829996727,
+        "constraint_parsing_ms": 0.9329169988632202,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1158.8566249993164,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.002916989615187049
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q008",
+      "query": "women's white footwear under ₹5000",
+      "query_type": [
+        "multi-constraint",
+        "gender",
+        "price"
+      ],
+      "expected_filters": {
+        "category": "footwear",
+        "color": "white",
+        "occasion": null,
+        "size": null,
+        "gender": "women",
+        "price_min": null,
+        "price_max": "5000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "actual_filters": {
+        "category": "footwear",
+        "color": "white",
+        "occasion": null,
+        "size": null,
+        "gender": "women",
+        "price_min": null,
+        "price_max": "5000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "135": 3,
+        "150": 3,
+        "195": 3,
+        "375": 3,
+        "495": 3,
+        "510": 3,
+        "555": 3,
+        "660": 3,
+        "735": 3
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        135,
+        150,
+        195,
+        375,
+        495,
+        510,
+        555,
+        660,
+        735
+      ],
+      "ranking": [
+        {
+          "product_id": 135,
+          "rank": 1,
+          "relevance": 3
+        },
+        {
+          "product_id": 150,
+          "rank": 2,
+          "relevance": 3
+        },
+        {
+          "product_id": 195,
+          "rank": 3,
+          "relevance": 3
+        },
+        {
+          "product_id": 375,
+          "rank": 4,
+          "relevance": 3
+        },
+        {
+          "product_id": 495,
+          "rank": 5,
+          "relevance": 3
+        },
+        {
+          "product_id": 510,
+          "rank": 6,
+          "relevance": 3
+        },
+        {
+          "product_id": 555,
+          "rank": 7,
+          "relevance": 3
+        },
+        {
+          "product_id": 660,
+          "rank": 8,
+          "relevance": 3
+        },
+        {
+          "product_id": 735,
+          "rank": 9,
+          "relevance": 3
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 9,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 9,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 9,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1352.9549169761594,
+        "constraint_parsing_ms": 0.6306669965852052,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1351.8024170189165,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.3045000194106251
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q009",
+      "query": "black dress for wedding under ₹4000",
+      "query_type": [
+        "occasion",
+        "multi-constraint",
+        "zero-result"
+      ],
+      "expected_filters": {
+        "category": "dress",
+        "color": "black",
+        "occasion": "wedding",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": "4000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "actual_filters": {
+        "category": "dress",
+        "color": "black",
+        "occasion": "wedding",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": "4000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": true,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": true,
+      "actual_result_count": 0,
+      "empty_classification": "true_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1179.0065419918392,
+        "constraint_parsing_ms": 0.6512499821837991,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1177.6155830011703,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.0034170225262641907
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q010",
+      "query": "minimalist outfit for summer",
+      "query_type": [
+        "semantic",
+        "weak"
+      ],
+      "expected_filters": {
+        "category": null,
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": null,
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 0,
+      "empty_classification": "false_empty",
+      "weak_case": true,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1254.6626669936813,
+        "constraint_parsing_ms": 2.325958019355312,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1252.2953750158194,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.0011669762898236513
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q011",
+      "query": "comfortable shoes for daily walking",
+      "query_type": [
+        "semantic",
+        "natural-language"
+      ],
+      "expected_filters": {
+        "category": null,
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": null,
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 0,
+      "empty_classification": "false_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1124.0465420123655,
+        "constraint_parsing_ms": 0.29504101257771254,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1123.627791996114,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.004959001671522856
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q012",
+      "query": "something elegant for a wedding",
+      "query_type": [
+        "semantic",
+        "occasion"
+      ],
+      "expected_filters": {
+        "category": null,
+        "color": null,
+        "occasion": "wedding",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": null,
+        "color": null,
+        "occasion": "wedding",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 0,
+      "empty_classification": "false_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1107.482791005168,
+        "constraint_parsing_ms": 1.0852499981410801,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1106.2120840069838,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.00200001522898674
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q013",
+      "query": "dress for wedding",
+      "query_type": [
+        "occasion",
+        "zero-result"
+      ],
+      "expected_filters": {
+        "category": "dress",
+        "color": null,
+        "occasion": "wedding",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "dress",
+        "color": null,
+        "occasion": "wedding",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": true,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": true,
+      "actual_result_count": 0,
+      "empty_classification": "true_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1111.016084003495,
+        "constraint_parsing_ms": 1.0447090025991201,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1109.9410830065608,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.0014999823179095984
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q014",
+      "query": "casual clothes for college",
+      "query_type": [
+        "occasion",
+        "synonym"
+      ],
+      "expected_filters": {
+        "category": null,
+        "color": null,
+        "occasion": "casual",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": null,
+        "color": null,
+        "occasion": "casual",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 0,
+      "empty_classification": "false_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1151.9502909795847,
+        "constraint_parsing_ms": 0.8374159806407988,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1150.8693340001628,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.005583016900345683
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q015",
+      "query": "shirt for office",
+      "query_type": [
+        "occasion",
+        "category"
+      ],
+      "expected_filters": {
+        "category": "shirt",
+        "color": null,
+        "occasion": "office",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "shirt",
+        "color": null,
+        "occasion": "office",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "6": 2,
+        "21": 2,
+        "96": 2,
+        "171": 2,
+        "291": 2,
+        "366": 2,
+        "381": 2,
+        "471": 2,
+        "501": 2,
+        "546": 2,
+        "561": 2,
+        "606": 2,
+        "666": 2
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        6,
+        21,
+        96,
+        171,
+        291,
+        366,
+        381,
+        471,
+        501,
+        546,
+        561,
+        606,
+        666
+      ],
+      "ranking": [
+        {
+          "product_id": 6,
+          "rank": 1,
+          "relevance": 2
+        },
+        {
+          "product_id": 21,
+          "rank": 2,
+          "relevance": 2
+        },
+        {
+          "product_id": 96,
+          "rank": 3,
+          "relevance": 2
+        },
+        {
+          "product_id": 171,
+          "rank": 4,
+          "relevance": 2
+        },
+        {
+          "product_id": 291,
+          "rank": 5,
+          "relevance": 2
+        },
+        {
+          "product_id": 366,
+          "rank": 6,
+          "relevance": 2
+        },
+        {
+          "product_id": 381,
+          "rank": 7,
+          "relevance": 2
+        },
+        {
+          "product_id": 471,
+          "rank": 8,
+          "relevance": 2
+        },
+        {
+          "product_id": 501,
+          "rank": 9,
+          "relevance": 2
+        },
+        {
+          "product_id": 546,
+          "rank": 10,
+          "relevance": 2
+        },
+        {
+          "product_id": 561,
+          "rank": 11,
+          "relevance": 2
+        },
+        {
+          "product_id": 606,
+          "rank": 12,
+          "relevance": 2
+        },
+        {
+          "product_id": 666,
+          "rank": 13,
+          "relevance": 2
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 1.0,
+        "recall_at_10": 0.7692307692307693,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 13,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 13,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 13,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1208.057416981319,
+        "constraint_parsing_ms": 1.385207986459136,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1205.6464169872925,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.5030420143157244
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q016",
+      "query": "black tee",
+      "query_type": [
+        "category-synonym",
+        "color"
+      ],
+      "expected_filters": {
+        "category": "t-shirt",
+        "color": "black",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "t-shirt",
+        "color": "black",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "161": 2,
+        "176": 2,
+        "326": 2,
+        "581": 2
+      },
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 0,
+      "empty_classification": "false_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1168.728334014304,
+        "constraint_parsing_ms": 0.8218330040108413,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1167.7865420060698,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.0009580107871443033
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q017",
+      "query": "running trainers",
+      "query_type": [
+        "category-synonym",
+        "semantic"
+      ],
+      "expected_filters": {
+        "category": "footwear",
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "footwear",
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 0,
+      "empty_classification": "false_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1145.8620420016814,
+        "constraint_parsing_ms": 0.2195419801864773,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1145.5549160018563,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.0016250123735517263
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q018",
+      "query": "party wear",
+      "query_type": [
+        "category-synonym",
+        "occasion"
+      ],
+      "expected_filters": {
+        "category": null,
+        "color": null,
+        "occasion": "party",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": null,
+        "color": null,
+        "occasion": "party",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [
+        9,
+        19,
+        31,
+        40,
+        45,
+        46,
+        48,
+        55,
+        60,
+        63,
+        64,
+        69,
+        76,
+        78,
+        100,
+        105,
+        106,
+        109,
+        110,
+        111,
+        115,
+        120,
+        121,
+        125,
+        129,
+        138,
+        147,
+        151,
+        156,
+        170,
+        177,
+        198,
+        200,
+        214,
+        220,
+        222,
+        225,
+        228,
+        235,
+        237,
+        241,
+        243,
+        245,
+        250,
+        255,
+        256,
+        261,
+        270,
+        271,
+        282
+      ],
+      "ranking": [
+        {
+          "product_id": 9,
+          "rank": 1,
+          "relevance": 0
+        },
+        {
+          "product_id": 19,
+          "rank": 2,
+          "relevance": 0
+        },
+        {
+          "product_id": 31,
+          "rank": 3,
+          "relevance": 0
+        },
+        {
+          "product_id": 40,
+          "rank": 4,
+          "relevance": 0
+        },
+        {
+          "product_id": 45,
+          "rank": 5,
+          "relevance": 0
+        },
+        {
+          "product_id": 46,
+          "rank": 6,
+          "relevance": 0
+        },
+        {
+          "product_id": 48,
+          "rank": 7,
+          "relevance": 0
+        },
+        {
+          "product_id": 55,
+          "rank": 8,
+          "relevance": 0
+        },
+        {
+          "product_id": 60,
+          "rank": 9,
+          "relevance": 0
+        },
+        {
+          "product_id": 63,
+          "rank": 10,
+          "relevance": 0
+        },
+        {
+          "product_id": 64,
+          "rank": 11,
+          "relevance": 0
+        },
+        {
+          "product_id": 69,
+          "rank": 12,
+          "relevance": 0
+        },
+        {
+          "product_id": 76,
+          "rank": 13,
+          "relevance": 0
+        },
+        {
+          "product_id": 78,
+          "rank": 14,
+          "relevance": 0
+        },
+        {
+          "product_id": 100,
+          "rank": 15,
+          "relevance": 0
+        },
+        {
+          "product_id": 105,
+          "rank": 16,
+          "relevance": 0
+        },
+        {
+          "product_id": 106,
+          "rank": 17,
+          "relevance": 0
+        },
+        {
+          "product_id": 109,
+          "rank": 18,
+          "relevance": 0
+        },
+        {
+          "product_id": 110,
+          "rank": 19,
+          "relevance": 0
+        },
+        {
+          "product_id": 111,
+          "rank": 20,
+          "relevance": 0
+        },
+        {
+          "product_id": 115,
+          "rank": 21,
+          "relevance": 0
+        },
+        {
+          "product_id": 120,
+          "rank": 22,
+          "relevance": 0
+        },
+        {
+          "product_id": 121,
+          "rank": 23,
+          "relevance": 0
+        },
+        {
+          "product_id": 125,
+          "rank": 24,
+          "relevance": 0
+        },
+        {
+          "product_id": 129,
+          "rank": 25,
+          "relevance": 0
+        },
+        {
+          "product_id": 138,
+          "rank": 26,
+          "relevance": 0
+        },
+        {
+          "product_id": 147,
+          "rank": 27,
+          "relevance": 0
+        },
+        {
+          "product_id": 151,
+          "rank": 28,
+          "relevance": 0
+        },
+        {
+          "product_id": 156,
+          "rank": 29,
+          "relevance": 0
+        },
+        {
+          "product_id": 170,
+          "rank": 30,
+          "relevance": 0
+        },
+        {
+          "product_id": 177,
+          "rank": 31,
+          "relevance": 0
+        },
+        {
+          "product_id": 198,
+          "rank": 32,
+          "relevance": 0
+        },
+        {
+          "product_id": 200,
+          "rank": 33,
+          "relevance": 0
+        },
+        {
+          "product_id": 214,
+          "rank": 34,
+          "relevance": 0
+        },
+        {
+          "product_id": 220,
+          "rank": 35,
+          "relevance": 0
+        },
+        {
+          "product_id": 222,
+          "rank": 36,
+          "relevance": 0
+        },
+        {
+          "product_id": 225,
+          "rank": 37,
+          "relevance": 0
+        },
+        {
+          "product_id": 228,
+          "rank": 38,
+          "relevance": 0
+        },
+        {
+          "product_id": 235,
+          "rank": 39,
+          "relevance": 0
+        },
+        {
+          "product_id": 237,
+          "rank": 40,
+          "relevance": 0
+        },
+        {
+          "product_id": 241,
+          "rank": 41,
+          "relevance": 0
+        },
+        {
+          "product_id": 243,
+          "rank": 42,
+          "relevance": 0
+        },
+        {
+          "product_id": 245,
+          "rank": 43,
+          "relevance": 0
+        },
+        {
+          "product_id": 250,
+          "rank": 44,
+          "relevance": 0
+        },
+        {
+          "product_id": 255,
+          "rank": 45,
+          "relevance": 0
+        },
+        {
+          "product_id": 256,
+          "rank": 46,
+          "relevance": 0
+        },
+        {
+          "product_id": 261,
+          "rank": 47,
+          "relevance": 0
+        },
+        {
+          "product_id": 270,
+          "rank": 48,
+          "relevance": 0
+        },
+        {
+          "product_id": 271,
+          "rank": 49,
+          "relevance": 0
+        },
+        {
+          "product_id": 282,
+          "rank": 50,
+          "relevance": 0
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 50,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 50,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 50,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1221.052624983713,
+        "constraint_parsing_ms": 0.6994169962126762,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1219.087874982506,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.9333340276498348
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q019",
+      "query": "I need something black to wear to a wedding",
+      "query_type": [
+        "natural-language",
+        "color",
+        "occasion"
+      ],
+      "expected_filters": {
+        "category": null,
+        "color": "black",
+        "occasion": "wedding",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": null,
+        "color": "black",
+        "occasion": "wedding",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 0,
+      "empty_classification": "false_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1150.8279159897938,
+        "constraint_parsing_ms": 0.5849579756613821,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1148.4298750001471,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.0019999861251562834
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q020",
+      "query": "show me a nice blue shirt for work under ₹3000",
+      "query_type": [
+        "natural-language",
+        "price",
+        "multi-constraint"
+      ],
+      "expected_filters": {
+        "category": "shirt",
+        "color": "blue",
+        "occasion": "office",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": "3000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "actual_filters": {
+        "category": "shirt",
+        "color": "blue",
+        "occasion": "office",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": "3000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": true,
+      "actual_result_count": 0,
+      "empty_classification": "true_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1281.6968749975786,
+        "constraint_parsing_ms": 1.9633749907370657,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1279.6662080218084,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.0016659905668348074
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q021",
+      "query": "I want comfortable shoes for everyday use",
+      "query_type": [
+        "natural-language",
+        "semantic"
+      ],
+      "expected_filters": {
+        "category": null,
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": null,
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 0,
+      "empty_classification": "false_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1188.4009579953272,
+        "constraint_parsing_ms": 0.506040989421308,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1187.75850001839,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.0038750004023313522
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q022",
+      "query": "purple dress",
+      "query_type": [
+        "simple",
+        "zero-result"
+      ],
+      "expected_filters": {
+        "category": "dress",
+        "color": "purple",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "dress",
+        "color": "purple",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": true,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": true,
+      "actual_result_count": 0,
+      "empty_classification": "true_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1163.9426659967285,
+        "constraint_parsing_ms": 0.8187080093193799,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1163.038750004489,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.005332985892891884
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q023",
+      "query": "shirt under ₹100",
+      "query_type": [
+        "price",
+        "zero-result"
+      ],
+      "expected_filters": {
+        "category": "shirt",
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": "100",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "actual_filters": {
+        "category": "shirt",
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": "100",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": true,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": true,
+      "actual_result_count": 0,
+      "empty_classification": "true_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1153.4590829978697,
+        "constraint_parsing_ms": 1.2167909881100059,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1152.126999979373,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.003207998815923929
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q024",
+      "query": "something stylish",
+      "query_type": [
+        "weak",
+        "ambiguous"
+      ],
+      "expected_filters": {
+        "category": null,
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": null,
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 0,
+      "empty_classification": "false_empty",
+      "weak_case": true,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1218.8455419964157,
+        "constraint_parsing_ms": 5.118874978506938,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1213.5819169925526,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.00100000761449337
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q025",
+      "query": "nice outfit",
+      "query_type": [
+        "weak",
+        "ambiguous"
+      ],
+      "expected_filters": {
+        "category": null,
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": null,
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 0,
+      "empty_classification": "false_empty",
+      "weak_case": true,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1194.80820800527,
+        "constraint_parsing_ms": 0.6518749869428575,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1194.0690420160536,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.00404199818149209
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q026",
+      "query": "something comfortable",
+      "query_type": [
+        "weak",
+        "ambiguous"
+      ],
+      "expected_filters": {
+        "category": null,
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": null,
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 0,
+      "empty_classification": "false_empty",
+      "weak_case": true,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1262.5698329939041,
+        "constraint_parsing_ms": 0.7968750142026693,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1261.6668330156244,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.005833018803969026
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q027",
+      "query": "white shirt size M",
+      "query_type": [
+        "category",
+        "color",
+        "size"
+      ],
+      "expected_filters": {
+        "category": "shirt",
+        "color": "white",
+        "occasion": null,
+        "size": "M",
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "shirt",
+        "color": "white",
+        "occasion": null,
+        "size": "M",
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "51": 2,
+        "141": 2,
+        "381": 2,
+        "426": 2,
+        "471": 2,
+        "486": 2,
+        "651": 2
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        141,
+        381,
+        471,
+        486,
+        651,
+        51,
+        426
+      ],
+      "ranking": [
+        {
+          "product_id": 141,
+          "rank": 1,
+          "relevance": 2
+        },
+        {
+          "product_id": 381,
+          "rank": 2,
+          "relevance": 2
+        },
+        {
+          "product_id": 471,
+          "rank": 3,
+          "relevance": 2
+        },
+        {
+          "product_id": 486,
+          "rank": 4,
+          "relevance": 2
+        },
+        {
+          "product_id": 651,
+          "rank": 5,
+          "relevance": 2
+        },
+        {
+          "product_id": 51,
+          "rank": 6,
+          "relevance": 2
+        },
+        {
+          "product_id": 426,
+          "rank": 7,
+          "relevance": 2
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 7,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 7,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 7,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1227.7698749967385,
+        "constraint_parsing_ms": 1.587208011187613,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1225.857375015039,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.14520800323225558
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q028",
+      "query": "women's black dress size M",
+      "query_type": [
+        "multi-constraint",
+        "gender",
+        "size"
+      ],
+      "expected_filters": {
+        "category": "dress",
+        "color": "black",
+        "occasion": null,
+        "size": "M",
+        "gender": "women",
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "dress",
+        "color": "black",
+        "occasion": null,
+        "size": "M",
+        "gender": "women",
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "170": 3,
+        "230": 3,
+        "350": 3,
+        "470": 3,
+        "590": 3
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        230,
+        470,
+        170,
+        350,
+        590
+      ],
+      "ranking": [
+        {
+          "product_id": 230,
+          "rank": 1,
+          "relevance": 3
+        },
+        {
+          "product_id": 470,
+          "rank": 2,
+          "relevance": 3
+        },
+        {
+          "product_id": 170,
+          "rank": 3,
+          "relevance": 3
+        },
+        {
+          "product_id": 350,
+          "rank": 4,
+          "relevance": 3
+        },
+        {
+          "product_id": 590,
+          "rank": 5,
+          "relevance": 3
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 5,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 5,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 5,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1436.576292006066,
+        "constraint_parsing_ms": 0.3555830044206232,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1435.1392090029549,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.22095799795351923
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q029",
+      "query": "men's white shirt above ₹2000",
+      "query_type": [
+        "gender",
+        "price",
+        "multi-constraint"
+      ],
+      "expected_filters": {
+        "category": "shirt",
+        "color": "white",
+        "occasion": null,
+        "size": null,
+        "gender": "men",
+        "price_min": "2000",
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": false,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "shirt",
+        "color": "white",
+        "occasion": null,
+        "size": null,
+        "gender": "men",
+        "price_min": "2000",
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": false,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "51": 2,
+        "381": 2,
+        "471": 2,
+        "651": 2
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        381,
+        471,
+        651,
+        51
+      ],
+      "ranking": [
+        {
+          "product_id": 381,
+          "rank": 1,
+          "relevance": 2
+        },
+        {
+          "product_id": 471,
+          "rank": 2,
+          "relevance": 2
+        },
+        {
+          "product_id": 651,
+          "rank": 3,
+          "relevance": 2
+        },
+        {
+          "product_id": 51,
+          "rank": 4,
+          "relevance": 2
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 0.8,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 4,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 4,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 4,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1227.8214590041898,
+        "constraint_parsing_ms": 1.4910000027157366,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1224.3803750025108,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.31712499912828207
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q030",
+      "query": "black wedding saree",
+      "query_type": [
+        "category",
+        "color",
+        "occasion"
+      ],
+      "expected_filters": {
+        "category": "saree",
+        "color": "black",
+        "occasion": "wedding",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "saree",
+        "color": "black",
+        "occasion": "wedding",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": false,
+      "returned_product_ids": [
+        391,
+        571
+      ],
+      "ranking": [
+        {
+          "product_id": 391,
+          "rank": 1,
+          "relevance": 0
+        },
+        {
+          "product_id": 571,
+          "rank": 2,
+          "relevance": 0
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 2,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 2,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 2,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1318.0826250172686,
+        "constraint_parsing_ms": 1.3852500123903155,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1316.528625000501,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.04437501775100827
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q031",
+      "query": "navy blue office shirt under ₹3000",
+      "query_type": [
+        "color",
+        "occasion",
+        "price"
+      ],
+      "expected_filters": {
+        "category": "shirt",
+        "color": "navy blue",
+        "occasion": "office",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": "3000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "actual_filters": {
+        "category": "shirt",
+        "color": "navy blue",
+        "occasion": "office",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": "3000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "21": 2,
+        "546": 2,
+        "666": 2
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        21,
+        546,
+        666
+      ],
+      "ranking": [
+        {
+          "product_id": 21,
+          "rank": 1,
+          "relevance": 2
+        },
+        {
+          "product_id": 546,
+          "rank": 2,
+          "relevance": 2
+        },
+        {
+          "product_id": 666,
+          "rank": 3,
+          "relevance": 2
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 0.6,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 3,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 3,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 3,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1091.0344590083696,
+        "constraint_parsing_ms": 0.33000000985339284,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1090.4235420166515,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.11629200889728963
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q032",
+      "query": "women's kurti for a wedding",
+      "query_type": [
+        "category-synonym",
+        "occasion",
+        "gender"
+      ],
+      "expected_filters": {
+        "category": "kurta",
+        "color": null,
+        "occasion": "wedding",
+        "size": null,
+        "gender": "women",
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "kurta",
+        "color": null,
+        "occasion": "wedding",
+        "size": null,
+        "gender": "women",
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "2": 2,
+        "77": 2,
+        "227": 2,
+        "302": 2,
+        "332": 2,
+        "347": 2,
+        "497": 2,
+        "512": 2,
+        "527": 2,
+        "587": 2,
+        "602": 2,
+        "617": 2,
+        "632": 2,
+        "692": 2,
+        "722": 2,
+        "737": 2
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        302,
+        332,
+        497,
+        512,
+        527,
+        602,
+        617,
+        632,
+        737
+      ],
+      "ranking": [
+        {
+          "product_id": 302,
+          "rank": 1,
+          "relevance": 2
+        },
+        {
+          "product_id": 332,
+          "rank": 2,
+          "relevance": 2
+        },
+        {
+          "product_id": 497,
+          "rank": 3,
+          "relevance": 2
+        },
+        {
+          "product_id": 512,
+          "rank": 4,
+          "relevance": 2
+        },
+        {
+          "product_id": 527,
+          "rank": 5,
+          "relevance": 2
+        },
+        {
+          "product_id": 602,
+          "rank": 6,
+          "relevance": 2
+        },
+        {
+          "product_id": 617,
+          "rank": 7,
+          "relevance": 2
+        },
+        {
+          "product_id": 632,
+          "rank": 8,
+          "relevance": 2
+        },
+        {
+          "product_id": 737,
+          "rank": 9,
+          "relevance": 2
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 1.0,
+        "recall_at_10": 0.5625,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 0.9363792118010482
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 9,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 9,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 9,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1133.3462079928722,
+        "constraint_parsing_ms": 0.4879999905824661,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1132.5178339902777,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.13816598220728338
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q033",
+      "query": "maroon wedding saree",
+      "query_type": [
+        "simple",
+        "color",
+        "occasion"
+      ],
+      "expected_filters": {
+        "category": "saree",
+        "color": "maroon",
+        "occasion": "wedding",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "saree",
+        "color": "maroon",
+        "occasion": "wedding",
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "1": 3
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        1
+      ],
+      "ranking": [
+        {
+          "product_id": 1,
+          "rank": 1,
+          "relevance": 3
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 0.2,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 1,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 1,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 1,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1240.4836660134606,
+        "constraint_parsing_ms": 0.38241600850597024,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1239.4269169890322,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.08691698894836009
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q034",
+      "query": "black polo t-shirt",
+      "query_type": [
+        "simple",
+        "category",
+        "color"
+      ],
+      "expected_filters": {
+        "category": "t-shirt",
+        "color": "black",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "t-shirt",
+        "color": "black",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "161": 2,
+        "176": 2,
+        "326": 2,
+        "581": 2
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        176,
+        326,
+        161,
+        581
+      ],
+      "ranking": [
+        {
+          "product_id": 176,
+          "rank": 1,
+          "relevance": 2
+        },
+        {
+          "product_id": 326,
+          "rank": 2,
+          "relevance": 2
+        },
+        {
+          "product_id": 161,
+          "rank": 3,
+          "relevance": 2
+        },
+        {
+          "product_id": 581,
+          "rank": 4,
+          "relevance": 2
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 0.8,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 4,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 4,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 4,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1171.9671250029933,
+        "constraint_parsing_ms": 3.0780420056544244,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1168.594959017355,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.11774999438785017
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q035",
+      "query": "men wedding footwear size 9",
+      "query_type": [
+        "multi-constraint",
+        "size",
+        "gender",
+        "occasion"
+      ],
+      "expected_filters": {
+        "category": "footwear",
+        "color": null,
+        "occasion": "wedding",
+        "size": "9",
+        "gender": "men",
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "footwear",
+        "color": null,
+        "occasion": "wedding",
+        "size": null,
+        "gender": "men",
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": false,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {
+          "size": {
+            "expected": "9",
+            "actual": null
+          }
+        },
+        "exact_match": false,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 0.75,
+        "constraint_f1": 0.8571428571428571
+      },
+      "relevance_judgments": {
+        "29": 2,
+        "44": 2,
+        "59": 2,
+        "149": 2,
+        "194": 2,
+        "239": 2,
+        "299": 2,
+        "314": 2,
+        "344": 2,
+        "419": 2,
+        "434": 2,
+        "449": 2,
+        "599": 2,
+        "674": 2
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.0,
+        "ndcg_at_10": 0.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 0,
+      "empty_classification": "false_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1244.5133340079337,
+        "constraint_parsing_ms": 0.5454170168377459,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1243.7757500156295,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.0009170034900307655
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q036",
+      "query": "women's kurta under ₹2000",
+      "query_type": [
+        "multi-constraint",
+        "gender",
+        "price"
+      ],
+      "expected_filters": {
+        "category": "kurta",
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": "women",
+        "price_min": null,
+        "price_max": "2000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "actual_filters": {
+        "category": "kurta",
+        "color": null,
+        "occasion": null,
+        "size": null,
+        "gender": "women",
+        "price_min": null,
+        "price_max": "2000",
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": false
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "2": 2,
+        "62": 2,
+        "227": 2,
+        "272": 2,
+        "287": 2,
+        "332": 2,
+        "437": 2,
+        "452": 2,
+        "497": 2,
+        "542": 2,
+        "602": 2,
+        "722": 2
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        2,
+        62,
+        227,
+        272,
+        452,
+        542,
+        722,
+        287,
+        332,
+        437,
+        497,
+        602
+      ],
+      "ranking": [
+        {
+          "product_id": 2,
+          "rank": 1,
+          "relevance": 2
+        },
+        {
+          "product_id": 62,
+          "rank": 2,
+          "relevance": 2
+        },
+        {
+          "product_id": 227,
+          "rank": 3,
+          "relevance": 2
+        },
+        {
+          "product_id": 272,
+          "rank": 4,
+          "relevance": 2
+        },
+        {
+          "product_id": 452,
+          "rank": 5,
+          "relevance": 2
+        },
+        {
+          "product_id": 542,
+          "rank": 6,
+          "relevance": 2
+        },
+        {
+          "product_id": 722,
+          "rank": 7,
+          "relevance": 2
+        },
+        {
+          "product_id": 287,
+          "rank": 8,
+          "relevance": 2
+        },
+        {
+          "product_id": 332,
+          "rank": 9,
+          "relevance": 2
+        },
+        {
+          "product_id": 437,
+          "rank": 10,
+          "relevance": 2
+        },
+        {
+          "product_id": 497,
+          "rank": 11,
+          "relevance": 2
+        },
+        {
+          "product_id": 602,
+          "rank": 12,
+          "relevance": 2
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 1.0,
+        "recall_at_10": 0.8333333333333334,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 12,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 12,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 12,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1171.1063330003526,
+        "constraint_parsing_ms": 1.221291022375226,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1169.0170840010978,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.4566660209093243
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q037",
+      "query": "blue jeans",
+      "query_type": [
+        "simple",
+        "color",
+        "zero-result"
+      ],
+      "expected_filters": {
+        "category": "jeans",
+        "color": "blue",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "jeans",
+        "color": "blue",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": true,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": true,
+      "actual_result_count": 0,
+      "empty_classification": "true_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1114.8071669740602,
+        "constraint_parsing_ms": 0.8234999841079116,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1113.8890419970267,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.0008329807315021753
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q038",
+      "query": "red jacket",
+      "query_type": [
+        "simple",
+        "color",
+        "zero-result"
+      ],
+      "expected_filters": {
+        "category": "jacket",
+        "color": "red",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "jacket",
+        "color": "red",
+        "occasion": null,
+        "size": null,
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {},
+      "judgments_complete": true,
+      "returned_product_ids": [],
+      "ranking": [],
+      "retrieval_metrics": {
+        "precision_at_5": null,
+        "recall_at_10": null,
+        "mrr": null,
+        "ndcg_at_5": null,
+        "ndcg_at_10": null
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": true,
+      "actual_result_count": 0,
+      "empty_classification": "true_empty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": false,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 0,
+          "weak": 0
+        },
+        "quality": "no_results"
+      },
+      "explanation_present_count": 0,
+      "explanation_present_rate": null,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1128.5509160079528,
+        "constraint_parsing_ms": 0.21070800721645355,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1128.2979999959935,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.0016249832697212696
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q039",
+      "query": "office trousers size 32 between ₹1000 and ₹3500",
+      "query_type": [
+        "multi-constraint",
+        "size",
+        "price"
+      ],
+      "expected_filters": {
+        "category": "trousers",
+        "color": null,
+        "occasion": "office",
+        "size": "32",
+        "gender": null,
+        "price_min": "1000",
+        "price_max": "3500",
+        "currency": "INR",
+        "price_min_inclusive": true,
+        "price_max_inclusive": true
+      },
+      "actual_filters": {
+        "category": "trousers",
+        "color": null,
+        "occasion": "office",
+        "size": "32",
+        "gender": null,
+        "price_min": "1000",
+        "price_max": "3500",
+        "currency": "INR",
+        "price_min_inclusive": true,
+        "price_max_inclusive": true
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "84": 2,
+        "99": 2,
+        "159": 2,
+        "174": 2,
+        "219": 2,
+        "234": 2,
+        "249": 2,
+        "264": 2,
+        "279": 2,
+        "324": 2,
+        "339": 2,
+        "579": 2,
+        "594": 2,
+        "639": 2,
+        "684": 2,
+        "699": 2,
+        "729": 2
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        84,
+        99,
+        159,
+        174,
+        219,
+        234,
+        249,
+        264,
+        279,
+        324,
+        339,
+        579,
+        594,
+        639,
+        684,
+        699,
+        729
+      ],
+      "ranking": [
+        {
+          "product_id": 84,
+          "rank": 1,
+          "relevance": 2
+        },
+        {
+          "product_id": 99,
+          "rank": 2,
+          "relevance": 2
+        },
+        {
+          "product_id": 159,
+          "rank": 3,
+          "relevance": 2
+        },
+        {
+          "product_id": 174,
+          "rank": 4,
+          "relevance": 2
+        },
+        {
+          "product_id": 219,
+          "rank": 5,
+          "relevance": 2
+        },
+        {
+          "product_id": 234,
+          "rank": 6,
+          "relevance": 2
+        },
+        {
+          "product_id": 249,
+          "rank": 7,
+          "relevance": 2
+        },
+        {
+          "product_id": 264,
+          "rank": 8,
+          "relevance": 2
+        },
+        {
+          "product_id": 279,
+          "rank": 9,
+          "relevance": 2
+        },
+        {
+          "product_id": 324,
+          "rank": 10,
+          "relevance": 2
+        },
+        {
+          "product_id": 339,
+          "rank": 11,
+          "relevance": 2
+        },
+        {
+          "product_id": 579,
+          "rank": 12,
+          "relevance": 2
+        },
+        {
+          "product_id": 594,
+          "rank": 13,
+          "relevance": 2
+        },
+        {
+          "product_id": 639,
+          "rank": 14,
+          "relevance": 2
+        },
+        {
+          "product_id": 684,
+          "rank": 15,
+          "relevance": 2
+        },
+        {
+          "product_id": 699,
+          "rank": 16,
+          "relevance": 2
+        },
+        {
+          "product_id": 729,
+          "rank": 17,
+          "relevance": 2
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 1.0,
+        "recall_at_10": 0.5882352941176471,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 17,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 17,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 17,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1136.714792024577,
+        "constraint_parsing_ms": 1.756540994392708,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1134.2183749948163,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.4205830045975745
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    },
+    {
+      "query_id": "q040",
+      "query": "navy blue party shirt size L",
+      "query_type": [
+        "multi-constraint",
+        "color",
+        "occasion",
+        "size"
+      ],
+      "expected_filters": {
+        "category": "shirt",
+        "color": "navy blue",
+        "occasion": "party",
+        "size": "L",
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "actual_filters": {
+        "category": "shirt",
+        "color": "navy blue",
+        "occasion": "party",
+        "size": "L",
+        "gender": null,
+        "price_min": null,
+        "price_max": null,
+        "currency": "INR",
+        "price_min_inclusive": null,
+        "price_max_inclusive": null
+      },
+      "filter_evaluation": {
+        "correct_fields": {
+          "category": true,
+          "color": true,
+          "occasion": true,
+          "size": true,
+          "gender": true,
+          "price_min": true,
+          "price_max": true,
+          "currency": true,
+          "price_min_inclusive": true,
+          "price_max_inclusive": true
+        },
+        "mismatches": {},
+        "exact_match": true,
+        "unexpected_constraint_count": 0,
+        "constraint_precision": 1.0,
+        "constraint_recall": 1.0,
+        "constraint_f1": 1.0
+      },
+      "relevance_judgments": {
+        "261": 2,
+        "351": 2,
+        "456": 2
+      },
+      "judgments_complete": true,
+      "returned_product_ids": [
+        351,
+        456,
+        261
+      ],
+      "ranking": [
+        {
+          "product_id": 351,
+          "rank": 1,
+          "relevance": 2
+        },
+        {
+          "product_id": 456,
+          "rank": 2,
+          "relevance": 2
+        },
+        {
+          "product_id": 261,
+          "rank": 3,
+          "relevance": 2
+        }
+      ],
+      "retrieval_metrics": {
+        "precision_at_5": 0.6,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "constraint_violation_ids": [],
+      "constraint_violation_count": 0,
+      "expected_empty": false,
+      "actual_result_count": 3,
+      "empty_classification": "expected_nonempty",
+      "weak_case": false,
+      "weak_result_behavior": {
+        "has_results": true,
+        "match_quality_counts": {
+          "strong": 0,
+          "good": 3,
+          "weak": 0
+        },
+        "quality": "classified_by_existing_rules"
+      },
+      "explanation_present_count": 3,
+      "explanation_present_rate": 1.0,
+      "unsupported_explanation_claims": [],
+      "latency": {
+        "total_latency_ms": 1240.1432500046212,
+        "constraint_parsing_ms": 0.561707973247394,
+        "query_embedding_ms": null,
+        "semantic_search_ms": null,
+        "keyword_search_ms": 1238.9101250155363,
+        "fusion_ms": 0.0,
+        "explanation_ms": 0.12337497901171446
+      },
+      "search_mode": "KEYWORD_ONLY",
+      "provider_mode": "offline_keyword",
+      "provider_model": null
+    }
+  ]
+}

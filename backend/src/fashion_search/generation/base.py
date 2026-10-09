@@ -33,8 +33,9 @@ class GenerationProvider(Protocol):
         """Return a lightweight configuration/reachability assessment."""
         ...
 
-    async def agenerate(self, prompt: str, *, system_prompt: str | None = None) -> str:
-        ...
+    async def agenerate(
+        self, prompt: str, *, system_prompt: str | None = None
+    ) -> str: ...
 
     async def agenerate_structured(
         self,
@@ -42,15 +43,16 @@ class GenerationProvider(Protocol):
         schema: type[T],
         *,
         system_prompt: str | None = None,
-    ) -> T:
-        ...
+    ) -> T: ...
 
 
 class AsyncGenerationMixin:
     """Non-blocking wrappers for synchronous SDKs used by sync FastAPI routes."""
 
     async def agenerate(self, prompt: str, *, system_prompt: str | None = None) -> str:
-        return await asyncio.to_thread(self.generate, prompt, system_prompt=system_prompt)
+        return await asyncio.to_thread(
+            self.generate, prompt, system_prompt=system_prompt
+        )
 
     async def agenerate_structured(
         self, prompt: str, schema: type[T], *, system_prompt: str | None = None

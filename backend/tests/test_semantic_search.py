@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 import os
 import unittest
 from types import SimpleNamespace
@@ -11,7 +10,10 @@ from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from fashion_search.embeddings.errors import EmbeddingConfigError, EmbeddingValidationError
+from fashion_search.embeddings.errors import (
+    EmbeddingConfigError,
+    EmbeddingValidationError,
+)
 from fashion_search.embeddings.gemini import TASK_QUERY, validate_embedding
 from fashion_search.search.schemas import SemanticSearchRequest
 from fashion_search.search.semantic import (
@@ -24,7 +26,11 @@ from fashion_search.search.vector import VectorHit
 
 
 def database_url_configured() -> bool:
-    return bool(os.environ.get("DATABASE_URL") or os.path.exists(".env") or os.path.exists("../.env"))
+    return bool(
+        os.environ.get("DATABASE_URL")
+        or os.path.exists(".env")
+        or os.path.exists("../.env")
+    )
 
 
 def unit_vector(values: list[float]) -> list[float]:
@@ -200,7 +206,9 @@ class PgvectorSearchTests(unittest.TestCase):
                 ).all()
             ]
         if len(cls.product_ids) < 3:
-            raise unittest.SkipTest("need at least 3 products for vector ordering tests")
+            raise unittest.SkipTest(
+                "need at least 3 products for vector ordering tests"
+            )
 
     def setUp(self) -> None:
         from sqlalchemy import text
@@ -295,9 +303,7 @@ class PgvectorSearchTests(unittest.TestCase):
 
         client = TestClient(app)
         query_vector = self.vectors[self.product_ids[0]]
-        with patch(
-            "fashion_search.search.semantic.get_embedding_provider"
-        ) as build:
+        with patch("fashion_search.search.semantic.get_embedding_provider") as build:
             embedder = MagicMock()
             embedder.embed_query.return_value = query_vector
             build.return_value = embedder

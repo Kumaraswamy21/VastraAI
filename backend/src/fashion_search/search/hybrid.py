@@ -32,7 +32,11 @@ from fashion_search.search.schemas import (
     RankingEvidence,
 )
 from fashion_search.search.semantic import SemanticSearchError, normalize_query
-from fashion_search.search.vector import VectorHit, embedding_index_status, search_by_vector
+from fashion_search.search.vector import (
+    VectorHit,
+    embedding_index_status,
+    search_by_vector,
+)
 
 logger = get_logger(__name__)
 
@@ -167,7 +171,9 @@ def hybrid_search(
     parse_ms = (time.perf_counter() - parse_started) * 1000
 
     if not constraints_currency_supported(constraints, settings=cfg):
-        logger.info("hybrid_search unsupported_currency currency=%s", constraints.currency)
+        logger.info(
+            "hybrid_search unsupported_currency currency=%s", constraints.currency
+        )
         return _empty_response(
             query,
             constraints,
@@ -192,7 +198,8 @@ def hybrid_search(
     embed_started = time.perf_counter()
     worker = embedder or get_embedding_provider(cfg)
     provider_name = (
-        worker.name if isinstance(getattr(worker, "name", None), str)
+        worker.name
+        if isinstance(getattr(worker, "name", None), str)
         else getattr(cfg, "embedding_provider", "gemini")
     )
     model_name = (
@@ -218,7 +225,10 @@ def hybrid_search(
             semantic_error = f"embedding index is {index_status}"
             logger.warning(
                 "semantic_unavailable provider=%s model=%s dimensions=%s index_status=%s",
-                provider_name, model_name, dimensions, index_status,
+                provider_name,
+                model_name,
+                dimensions,
+                index_status,
             )
         else:
             query_vector = worker.embed_query(retrieval_query)
@@ -290,7 +300,8 @@ def hybrid_search(
         reverse = sort_preference == "PRICE_DESC"
         fused.sort(
             key=lambda row: (
-                -products_for_price[row.product_id].price_inr if reverse
+                -products_for_price[row.product_id].price_inr
+                if reverse
                 else products_for_price[row.product_id].price_inr,
                 -row.hybrid_score,
                 row.product_id,
@@ -314,8 +325,12 @@ def hybrid_search(
     explanation_started = time.perf_counter()
     results = [
         _result_from_product(
-            products_by_id[row.product_id], row, constraints,
-            final_rank=index, thresholds=thresholds, builder=builder,
+            products_by_id[row.product_id],
+            row,
+            constraints,
+            final_rank=index,
+            thresholds=thresholds,
+            builder=builder,
         )
         for index, row in enumerate(fused, start=1)
         if row.product_id in products_by_id
@@ -333,7 +348,7 @@ def hybrid_search(
             diagnostics, suggestions = diagnose_zero_results(constraints)
             if diagnostics.exact_match_count == 0:
                 search_status = "no_exact_matches"
-                message = "No products matched all of your filters."
+                message = "No products matched this exact filter combination in the current catalog."
             else:
                 search_status = "no_relevant_matches"
                 message = (

@@ -1,4 +1,20 @@
 services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: vastraai
+      POSTGRES_PASSWORD: vastraai_local
+      POSTGRES_DB: vastraai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vastraai -d vastraai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build: ./backend
     ports:
@@ -7,6 +23,11 @@ services:
       - .env
     environment:
       CORS_ORIGINS: http://localhost:3000
+      DATABASE_URL: postgresql://vastraai:vastraai_local@db:5432/vastraai?sslmode=disable
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    depends_on:
+      db:
+        condition: service_healthy
 
   frontend:
     build:
@@ -19,3 +40,6 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:8000
     depends_on:
       - backend
+
+volumes:
+  postgres_data:

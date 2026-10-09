@@ -12,12 +12,19 @@ from pydantic import ValidationError
 
 from fashion_search.api.search import router
 from fashion_search.search.conversation import (
-    FollowUpInterpreter, RevisionConflictError, SearchStateReducer,
-    StateTransitionError, active_filters, deterministic_refinement,
+    FollowUpInterpreter,
+    RevisionConflictError,
+    SearchStateReducer,
+    StateTransitionError,
+    active_filters,
+    deterministic_refinement,
 )
 from fashion_search.search.schemas import (
-    ConstraintUpdate, FashionSearchConstraints, HybridSearchResponse,
-    SearchRefinement, SearchState,
+    ConstraintUpdate,
+    FashionSearchConstraints,
+    HybridSearchResponse,
+    SearchRefinement,
+    SearchState,
 )
 from fashion_search.search.sessions import search_session_store
 
@@ -28,8 +35,11 @@ def state(**overrides: object) -> SearchState:
         "current_query": "black dress under ₹4000 for wedding",
         "semantic_query": "black dress under ₹4000 for wedding",
         "constraints": FashionSearchConstraints(
-            category="dress", color="black", occasion="wedding",
-            price_max=Decimal("4000"), price_max_inclusive=False,
+            category="dress",
+            color="black",
+            occasion="wedding",
+            price_max=Decimal("4000"),
+            price_max_inclusive=False,
         ),
         "revision": 2,
     }
@@ -97,9 +107,11 @@ class RefinementTests(unittest.TestCase):
         self.assertEqual(updated.original_query, "show men's running shoes")
 
     def test_actually_can_replace_conflicting_price_context(self) -> None:
-        current = state(constraints=FashionSearchConstraints(
-            category="dress", price_min=Decimal("3000")
-        ))
+        current = state(
+            constraints=FashionSearchConstraints(
+                category="dress", price_min=Decimal("3000")
+            )
+        )
         updated = apply("actually under ₹2000", current)
         self.assertIsNone(updated.constraints.price_min)
         self.assertEqual(updated.constraints.price_max, Decimal("2000"))
@@ -109,9 +121,9 @@ class ReducerTests(unittest.TestCase):
     def test_revision_increments_and_stale_revision_is_rejected(self) -> None:
         updated = apply("make it blue")
         self.assertEqual(updated.revision, 3)
-        refinement = SearchRefinement(updates=[
-            ConstraintUpdate(field="size", operation="SET", value="M")
-        ])
+        refinement = SearchRefinement(
+            updates=[ConstraintUpdate(field="size", operation="SET", value="M")]
+        )
         with self.assertRaises(RevisionConflictError):
             SearchStateReducer().apply(
                 updated, refinement, message="size M", expected_revision=2
@@ -120,15 +132,27 @@ class ReducerTests(unittest.TestCase):
     def test_invalid_price_range_and_unsupported_taxonomy_are_rejected(self) -> None:
         with self.assertRaises(StateTransitionError):
             SearchStateReducer().apply(
-                state(), SearchRefinement(updates=[ConstraintUpdate(
-                    field="price_min", operation="SET", value=Decimal("5000")
-                )]), message="over 5000", expected_revision=2,
+                state(),
+                SearchRefinement(
+                    updates=[
+                        ConstraintUpdate(
+                            field="price_min", operation="SET", value=Decimal("5000")
+                        )
+                    ]
+                ),
+                message="over 5000",
+                expected_revision=2,
             )
         with self.assertRaises(StateTransitionError):
             SearchStateReducer().apply(
-                state(), SearchRefinement(updates=[ConstraintUpdate(
-                    field="size", operation="SET", value="GIANT"
-                )]), message="size giant", expected_revision=2,
+                state(),
+                SearchRefinement(
+                    updates=[
+                        ConstraintUpdate(field="size", operation="SET", value="GIANT")
+                    ]
+                ),
+                message="size giant",
+                expected_revision=2,
             )
 
     def test_update_schema_forbids_fields_and_bad_operations(self) -> None:
@@ -140,7 +164,9 @@ class ReducerTests(unittest.TestCase):
     def test_provider_failure_never_erases_state(self) -> None:
         provider = MagicMock()
         provider.generate_structured.side_effect = RuntimeError("offline")
-        refinement = FollowUpInterpreter(provider).interpret("something elegant", state())
+        refinement = FollowUpInterpreter(provider).interpret(
+            "something elegant", state()
+        )
         updated = SearchStateReducer().apply(
             state(), refinement, message="something elegant", expected_revision=2
         )
@@ -170,25 +196,40 @@ class SearchApiTests(unittest.TestCase):
     @staticmethod
     def empty_result(query: str = "dress") -> HybridSearchResponse:
         return HybridSearchResponse(
-            query=query, retrieval_query=query, filters={}, total=0, results=[],
+            query=query,
+            retrieval_query=query,
+            filters={},
+            total=0,
+            results=[],
             search_status="no_exact_matches",
             message="No products matched all of your current filters.",
         )
 
     def test_initial_then_refinement_and_structured_chip_removal(self) -> None:
         initial = state(revision=0)
-        with patch("fashion_search.api.search.initial_search_state", return_value=initial), \
-             patch("fashion_search.api.search.hybrid_search", return_value=self.empty_result()):
+        with (
+            patch(
+                "fashion_search.api.search.initial_search_state", return_value=initial
+            ),
+            patch(
+                "fashion_search.api.search.hybrid_search",
+                return_value=self.empty_result(),
+            ),
+        ):
             first = self.client.post("/search", json={"query": initial.original_query})
             self.assertEqual(first.status_code, 200)
             first_body = first.json()
             self.assertEqual(first_body["revision"], 0)
             self.assertEqual(first_body["search_status"], "no_exact_matches")
 
-            second = self.client.post("/search", json={
-                "session_id": first_body["session_id"], "expected_revision": 0,
-                "message": "make it blue",
-            })
+            second = self.client.post(
+                "/search",
+                json={
+                    "session_id": first_body["session_id"],
+                    "expected_revision": 0,
+                    "message": "make it blue",
+                },
+            )
             self.assertEqual(second.status_code, 200)
             second_body = second.json()
             constraints = second_body["state"]["constraints"]
@@ -197,20 +238,30 @@ class SearchApiTests(unittest.TestCase):
             self.assertEqual(constraints["occasion"], "wedding")
             self.assertEqual(constraints["price_max"], "4000")
 
-            removed = self.client.post("/search", json={
-                "session_id": first_body["session_id"], "expected_revision": 1,
-                "updates": [{"field": "occasion", "operation": "REMOVE"}],
-            })
+            removed = self.client.post(
+                "/search",
+                json={
+                    "session_id": first_body["session_id"],
+                    "expected_revision": 1,
+                    "updates": [{"field": "occasion", "operation": "REMOVE"}],
+                },
+            )
             self.assertEqual(removed.status_code, 200)
             self.assertIsNone(removed.json()["state"]["constraints"]["occasion"])
 
     def test_stale_request_gets_conflict(self) -> None:
         session_id, _ = search_session_store.create(state(revision=4))
-        with patch("fashion_search.api.search.hybrid_search", return_value=self.empty_result()):
-            response = self.client.post("/search", json={
-                "session_id": session_id, "expected_revision": 3,
-                "message": "make it blue",
-            })
+        with patch(
+            "fashion_search.api.search.hybrid_search", return_value=self.empty_result()
+        ):
+            response = self.client.post(
+                "/search",
+                json={
+                    "session_id": session_id,
+                    "expected_revision": 3,
+                    "message": "make it blue",
+                },
+            )
         self.assertEqual(response.status_code, 409)
 
 

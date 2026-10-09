@@ -7,7 +7,10 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from fashion_search.embeddings.errors import EmbeddingConfigError, EmbeddingValidationError
+from fashion_search.embeddings.errors import (
+    EmbeddingConfigError,
+    EmbeddingValidationError,
+)
 from fashion_search.embeddings.gemini import (
     GeminiEmbedder,
     l2_normalize,
@@ -274,9 +277,14 @@ class PipelineTests(unittest.TestCase):
                 "fashion_search.embeddings.pipeline.iter_product_batches",
                 return_value=[[product]],
             ),
-            patch("fashion_search.embeddings.pipeline.recover_stale_processing") as recover,
+            patch(
+                "fashion_search.embeddings.pipeline.recover_stale_processing"
+            ) as recover,
             patch("fashion_search.embeddings.pipeline.mark_processing") as mark,
             patch("fashion_search.embeddings.pipeline.save_completed") as save,
+            patch(
+                "fashion_search.embeddings.pipeline.save_completed_batch"
+            ) as save_batch,
             patch("fashion_search.embeddings.pipeline.get_embedding_provider") as build,
         ):
             stats = run_embedding_pipeline(dry_run=True, settings=settings)
@@ -288,6 +296,7 @@ class PipelineTests(unittest.TestCase):
         recover.assert_not_called()
         mark.assert_not_called()
         save.assert_not_called()
+        save_batch.assert_not_called()
         build.assert_not_called()
 
     def test_pipeline_skips_unchanged_and_embeds_stale(self) -> None:
@@ -357,9 +366,15 @@ class PipelineTests(unittest.TestCase):
                 "fashion_search.embeddings.pipeline.iter_product_batches",
                 return_value=[[fresh, stale]],
             ),
-            patch("fashion_search.embeddings.pipeline.recover_stale_processing", return_value=0),
+            patch(
+                "fashion_search.embeddings.pipeline.recover_stale_processing",
+                return_value=0,
+            ),
             patch("fashion_search.embeddings.pipeline.mark_processing") as mark,
             patch("fashion_search.embeddings.pipeline.save_completed") as save,
+            patch(
+                "fashion_search.embeddings.pipeline.save_completed_batch"
+            ) as save_batch,
             patch("fashion_search.embeddings.pipeline.save_failed") as failed,
         ):
             stats = run_embedding_pipeline(
@@ -374,7 +389,8 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(stats.embedded, 1)
         self.assertEqual(stats.failed, 0)
         mark.assert_called_once()
-        save.assert_called_once()
+        save.assert_not_called()
+        save_batch.assert_called_once()
         failed.assert_not_called()
         worker.embed_texts.assert_called_once()
 
@@ -422,7 +438,10 @@ class PipelineTests(unittest.TestCase):
                 "fashion_search.embeddings.pipeline.iter_product_batches",
                 return_value=[[product]],
             ),
-            patch("fashion_search.embeddings.pipeline.recover_stale_processing", return_value=0),
+            patch(
+                "fashion_search.embeddings.pipeline.recover_stale_processing",
+                return_value=0,
+            ),
             patch("fashion_search.embeddings.pipeline.get_embedding_provider") as build,
         ):
             stats = run_embedding_pipeline(dry_run=False, settings=settings)

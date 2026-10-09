@@ -39,3 +39,8 @@ pnpm-debug.log*
 *.pt
 *.onnx
 data/raw/
+*.log
+*.sql.gz
+*.dump
+backend/evaluation/results/current.json
+backend/evaluation/results/current.md

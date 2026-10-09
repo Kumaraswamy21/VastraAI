@@ -19,9 +19,9 @@ def create_app() -> FastAPI:
     configure_logging()
     settings = get_settings()
     app = FastAPI(
-        title="AI Fashion Search",
+        title="VastraAI",
         version="0.1.0",
-        description="Conversational fashion catalog search. Day 1 scaffold.",
+        description="Conversational fashion catalog search API.",
     )
     app.add_middleware(
         CORSMiddleware,
@@ -30,6 +30,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
     @app.middleware("http")
     async def correlation_id(request, call_next):
         identifier = str(uuid4())
@@ -40,6 +41,7 @@ def create_app() -> FastAPI:
             return response
         finally:
             request_id_var.reset(token)
+
     app.include_router(health_router)
     app.include_router(products_router)
     app.include_router(search_router)

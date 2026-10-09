@@ -3,7 +3,7 @@
 from fashion_search.ai.errors import (
     AIProviderAuthenticationError,
     AIProviderError,
-    AIProviderResponseError,
+    AIProviderResponseError as AIProviderResponseError,
     AIProviderUnavailableError,
     EmbeddingDimensionError,
 )

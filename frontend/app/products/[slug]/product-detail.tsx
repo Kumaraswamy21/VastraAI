@@ -14,8 +14,8 @@ export function ProductDetail({ slug }: { slug: string }) {
     return (
       <main className="p-8">
         <h1 className="text-xl font-semibold">Product not found</h1>
-        <Link href="/catalog" className="mt-4 inline-block text-sm text-zinc-600 underline">
-          Back to catalog
+        <Link href="/" className="mt-4 inline-block text-sm text-zinc-600 underline">
+          Back to search
         </Link>
       </main>
     );
@@ -27,9 +27,10 @@ export function ProductDetail({ slug }: { slug: string }) {
   const product = state.product;
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-10">
-      <Link href="/catalog" className="text-sm text-zinc-600 underline">
-        Back to catalog
-      </Link>
+      <nav className="flex gap-4 text-sm text-zinc-600">
+        <Link href="/" className="underline">Back to search</Link>
+        <Link href="/catalog" className="underline">Browse catalog</Link>
+      </nav>
       <div
         className="h-56 rounded-xl"
         style={{ backgroundColor: swatchForColor(product.color) }}

@@ -16,8 +16,12 @@ class FashionSearchConstraints(BaseModel):
     occasion: str | None = None
     size: str | None = None
     gender: str | None = None
-    price_min: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
-    price_max: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
+    price_min: Decimal | None = Field(
+        default=None, ge=0, max_digits=12, decimal_places=2
+    )
+    price_max: Decimal | None = Field(
+        default=None, ge=0, max_digits=12, decimal_places=2
+    )
     currency: str = Field(default="INR", pattern=r"^[A-Z]{3}$")
     price_min_inclusive: bool | None = None
     price_max_inclusive: bool | None = None
@@ -107,7 +111,9 @@ class SemanticSearchResponse(BaseModel):
     embedding_model: str
     embedding_dimensions: int
     embedding_provider: str = "gemini"
-    embedding_index_status: Literal["ready", "empty", "incompatible", "unknown"] = "unknown"
+    embedding_index_status: Literal["ready", "empty", "incompatible", "unknown"] = (
+        "unknown"
+    )
     results: list[SemanticSearchHit]
 
 
@@ -128,8 +134,14 @@ class HybridSearchRequest(BaseModel):
 
 
 ConstraintField = Literal[
-    "category", "color", "occasion", "size", "gender",
-    "price_min", "price_max", "currency",
+    "category",
+    "color",
+    "occasion",
+    "size",
+    "gender",
+    "price_min",
+    "price_max",
+    "currency",
 ]
 ConstraintOperation = Literal["SET", "REMOVE", "KEEP", "RELAX"]
 SortPreference = Literal["RELEVANCE", "PRICE_ASC", "PRICE_DESC"]
@@ -173,7 +185,9 @@ class SearchState(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
     original_query: str = Field(min_length=1, max_length=500)
     current_query: str = Field(min_length=1, max_length=500)
-    constraints: FashionSearchConstraints = Field(default_factory=FashionSearchConstraints)
+    constraints: FashionSearchConstraints = Field(
+        default_factory=FashionSearchConstraints
+    )
     semantic_query: str = Field(min_length=1, max_length=1000)
     semantic_modifiers: list[str] = Field(default_factory=list, max_length=12)
     sort_preference: SortPreference = "RELEVANCE"
@@ -264,6 +278,8 @@ class HybridSearchResponse(BaseModel):
     diagnostics: SearchDiagnostics | None = None
     search_mode: Literal["hybrid", "keyword_fallback", "semantic_fallback"] = "hybrid"
     semantic_search_available: bool = True
-    embedding_index_status: Literal["ready", "empty", "incompatible", "unknown"] = "unknown"
+    embedding_index_status: Literal["ready", "empty", "incompatible", "unknown"] = (
+        "unknown"
+    )
     metrics: dict[str, object] = Field(default_factory=dict)
     request_id: str | None = None

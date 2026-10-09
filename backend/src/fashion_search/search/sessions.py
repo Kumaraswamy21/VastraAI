@@ -27,7 +27,9 @@ class SearchSessionStore:
             state = self._states.get(session_id)
             return state.model_copy(deep=True) if state else None
 
-    def commit(self, session_id: str, state: SearchState, *, expected_revision: int) -> None:
+    def commit(
+        self, session_id: str, state: SearchState, *, expected_revision: int
+    ) -> None:
         with self._lock:
             current = self._states.get(session_id)
             if current is None:

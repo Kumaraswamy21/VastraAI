@@ -75,7 +75,9 @@ def normalize_product_text(product: Mapping[str, Any]) -> str:
     if description is not None:
         lowered = description.lower()
         if lowered not in seen_values:
-            parts.append(description if description.endswith(".") else f"{description}.")
+            parts.append(
+                description if description.endswith(".") else f"{description}."
+            )
 
     return " ".join(parts)
 

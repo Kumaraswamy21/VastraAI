@@ -24,14 +24,11 @@ class EmbeddingProvider(Protocol):
         """Embed a query in the same vector space as documents."""
         ...
 
-    def health(self) -> dict[str, object]:
-        ...
+    def health(self) -> dict[str, object]: ...
 
-    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
-        ...
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]: ...
 
-    async def aembed_query(self, text: str) -> list[float]:
-        ...
+    async def aembed_query(self, text: str) -> list[float]: ...
 
 
 class AsyncEmbeddingMixin:
@@ -49,7 +46,9 @@ def require_nonempty(text: str) -> str:
     return cleaned
 
 
-def validate_embedding(vector: Sequence[float], expected_dimensions: int) -> list[float]:
+def validate_embedding(
+    vector: Sequence[float], expected_dimensions: int
+) -> list[float]:
     """Validate and L2-normalize a provider vector."""
     if not vector:
         raise EmbeddingDimensionError("embedding vector is empty")

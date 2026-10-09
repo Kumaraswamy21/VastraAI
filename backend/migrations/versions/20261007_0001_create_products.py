@@ -32,7 +32,10 @@ def upgrade() -> None:
         sa.Column("slug", sa.String(length=255), nullable=False),
         sa.Column("embedding", Vector(dim=384), nullable=True),
         sa.Column("search_vector", postgresql.TSVECTOR(), nullable=True),
-        sa.CheckConstraint("gender IN ('women', 'men', 'unisex', 'kids')", name="ck_products_gender_allowed"),
+        sa.CheckConstraint(
+            "gender IN ('women', 'men', 'unisex', 'kids')",
+            name="ck_products_gender_allowed",
+        ),
         sa.CheckConstraint("price_inr >= 100", name="ck_products_price_inr_positive"),
         sa.CheckConstraint("cardinality(sizes) > 0", name="ck_products_sizes_nonempty"),
         sa.PrimaryKeyConstraint("id"),

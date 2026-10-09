@@ -52,7 +52,8 @@ class GenerationRouter(AsyncGenerationMixin):
                 raise
             logger.warning(
                 "generation_fallback primary=%s fallback=%s",
-                self._primary.name, self._fallback.name,
+                self._primary.name,
+                self._fallback.name,
             )
             with fallback_context():
                 return getattr(self._fallback, method)(*args, **kwargs)

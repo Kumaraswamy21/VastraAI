@@ -62,7 +62,9 @@ class FakeResponse:
 
 class GenerationProviderContractTests(unittest.TestCase):
     def test_blank_fallback_configuration_disables_fallback(self) -> None:
-        self.assertIsNone(settings(generation_fallback_provider="").generation_fallback_provider)
+        self.assertIsNone(
+            settings(generation_fallback_provider="").generation_fallback_provider
+        )
 
     def test_gemini_text_and_structured_generation(self) -> None:
         client = MagicMock()
@@ -121,7 +123,9 @@ class GenerationProviderContractTests(unittest.TestCase):
         fallback = MagicMock(name="fallback")
         fallback.name = "ollama"
         fallback.generate.return_value = "local"
-        router = GenerationRouter(primary=primary, fallback=fallback, settings=settings())
+        router = GenerationRouter(
+            primary=primary, fallback=fallback, settings=settings()
+        )
         self.assertEqual(router.generate("hi"), "local")
 
 
@@ -129,7 +133,12 @@ class EmbeddingProviderContractTests(unittest.TestCase):
     def test_gemini_documents_query_batch_and_identity(self) -> None:
         client = MagicMock()
         client.models.embed_content.side_effect = [
-            SimpleNamespace(embeddings=[SimpleNamespace(values=[1.0, 0.0]), SimpleNamespace(values=[0.0, 1.0])]),
+            SimpleNamespace(
+                embeddings=[
+                    SimpleNamespace(values=[1.0, 0.0]),
+                    SimpleNamespace(values=[0.0, 1.0]),
+                ]
+            ),
             SimpleNamespace(embeddings=[SimpleNamespace(values=[1.0, 0.0])]),
         ]
         provider = GeminiEmbedder(settings(), client=client)
@@ -159,21 +168,31 @@ class EmbeddingProviderContractTests(unittest.TestCase):
 
     def test_embedding_factory_switches_independently(self) -> None:
         self.assertIsInstance(
-            get_embedding_provider(settings(embedding_provider="gemini")), GeminiEmbedder
+            get_embedding_provider(settings(embedding_provider="gemini")),
+            GeminiEmbedder,
         )
         self.assertIsInstance(
-            get_embedding_provider(settings(embedding_provider="ollama")), OllamaEmbedder
+            get_embedding_provider(settings(embedding_provider="ollama")),
+            OllamaEmbedder,
         )
 
 
 class CompatibilityAndDegradationTests(unittest.TestCase):
     @patch("fashion_search.search.hybrid.diagnose_zero_results")
     @patch("fashion_search.search.hybrid.search_by_keyword")
-    @patch("fashion_search.search.hybrid.embedding_index_status", return_value="incompatible")
+    @patch(
+        "fashion_search.search.hybrid.embedding_index_status",
+        return_value="incompatible",
+    )
     @patch("fashion_search.search.hybrid.get_embedding_provider")
     @patch("fashion_search.search.hybrid.parse_constraints")
     def test_incompatible_index_skips_query_embedding_and_uses_keyword(
-        self, parse, get_provider, index_status, keyword, diagnostics,
+        self,
+        parse,
+        get_provider,
+        index_status,
+        keyword,
+        diagnostics,
     ) -> None:
         constraints = FashionSearchConstraints(category="dress")
         parse.return_value = SimpleNamespace(constraints=constraints)
@@ -183,15 +202,27 @@ class CompatibilityAndDegradationTests(unittest.TestCase):
         provider.dimensions = 2
         get_provider.return_value = provider
         item = SimpleNamespace(
-            id=1, title="Dress", category="dress", color="black", material="cotton",
-            style="maxi", gender="women", occasion="casual", sizes=["M"],
-            price_inr=1000, image_reference="x", slug="dress",
+            id=1,
+            title="Dress",
+            category="dress",
+            color="black",
+            material="cotton",
+            style="maxi",
+            gender="women",
+            occasion="casual",
+            sizes=["M"],
+            price_inr=1000,
+            image_reference="x",
+            slug="dress",
         )
         keyword.return_value = [KeywordHit(item, 0.4)]
         cfg = settings(
-            embedding_provider="ollama", hybrid_candidate_limit=10,
-            hybrid_rrf_k=60, hybrid_semantic_weight=0.6,
-            hybrid_keyword_weight=0.4, search_diagnostics_enabled=True,
+            embedding_provider="ollama",
+            hybrid_candidate_limit=10,
+            hybrid_rrf_k=60,
+            hybrid_semantic_weight=0.6,
+            hybrid_keyword_weight=0.4,
+            search_diagnostics_enabled=True,
         )
         response = hybrid_search(HybridSearchRequest(query="dress"), settings=cfg)
         provider.embed_query.assert_not_called()

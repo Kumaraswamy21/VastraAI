@@ -26,6 +26,12 @@ setweight(
 setweight(to_tsvector('english', coalesce(description, '')), 'D')
 """
 
+_TRIGGER_SEARCH_VECTOR_EXPR = _SEARCH_VECTOR_EXPR
+for _column in ("title", "category", "color", "material", "style", "description"):
+    _TRIGGER_SEARCH_VECTOR_EXPR = _TRIGGER_SEARCH_VECTOR_EXPR.replace(
+        f"coalesce({_column},", f"coalesce(NEW.{_column},"
+    )
+
 
 def upgrade() -> None:
     op.execute(
@@ -34,7 +40,7 @@ def upgrade() -> None:
         RETURNS trigger AS $$
         BEGIN
             NEW.search_vector := """
-        + _SEARCH_VECTOR_EXPR
+        + _TRIGGER_SEARCH_VECTOR_EXPR
         + """;
             RETURN NEW;
         END;

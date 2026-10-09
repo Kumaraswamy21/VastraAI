@@ -10,24 +10,26 @@ type ProductState =
   | { kind: "ready"; product: Product };
 
 export function useProduct(slug: string): ProductState {
-  const [state, setState] = useState<ProductState>({ kind: "loading" });
+  const [state, setState] = useState<{ slug: string; value: ProductState }>({
+    slug,
+    value: { kind: "loading" },
+  });
 
   useEffect(() => {
     const controller = new AbortController();
-    setState({ kind: "loading" });
     fetchProduct(slug, controller.signal)
-      .then((product) => setState({ kind: "ready", product }))
+      .then((product) => setState({ slug, value: { kind: "ready", product } }))
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
         if (error instanceof ApiError && error.status === 404) {
-          setState({ kind: "missing" });
+          setState({ slug, value: { kind: "missing" } });
           return;
         }
         const message = error instanceof Error ? error.message : "Product request failed";
-        setState({ kind: "error", message });
+        setState({ slug, value: { kind: "error", message } });
       });
     return () => controller.abort();
   }, [slug]);
 
-  return state;
+  return state.slug === slug ? state.value : { kind: "loading" };
 }

@@ -37,14 +37,16 @@ def embedding_index_status(*, provider: str, model: str, dimensions: int) -> str
     )
     statement = select(
         func.count(Product.id).filter(Product.embedding.is_not(None)).label("total"),
-        func.count(Product.id).filter(
+        func.count(Product.id)
+        .filter(
             completed,
             Product.embedding.is_not(None),
             compatible_space,
-        ).label("compatible"),
-        func.count(Product.id).filter(
-            Product.embedding.is_not(None), incompatible_space
-        ).label("incompatible"),
+        )
+        .label("compatible"),
+        func.count(Product.id)
+        .filter(Product.embedding.is_not(None), incompatible_space)
+        .label("incompatible"),
     )
     with Session(get_engine()) as session:
         row = session.execute(statement).one()
@@ -99,6 +101,5 @@ def search_by_vector(
     with Session(get_engine(), expire_on_commit=False) as session:
         rows = session.execute(statement).all()
         return [
-            VectorHit(product=row[0], similarity_score=float(row[1]))
-            for row in rows
+            VectorHit(product=row[0], similarity_score=float(row[1])) for row in rows
         ]
