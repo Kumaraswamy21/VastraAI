@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import {
   ApiError,
-  fetchHybridSearch,
-  type HybridSearchResponse,
+  fetchConversationalSearch,
+  type ConstraintField,
+  type ConversationalSearchResponse,
   type HybridSearchResult,
 } from "@/lib/api";
 import { formatInr, swatchForColor } from "@/lib/color-swatch";
@@ -14,12 +15,7 @@ type SearchState =
   | { kind: "idle" }
   | { kind: "loading" }
   | { kind: "error"; message: string }
-  | { kind: "ready"; data: HybridSearchResponse };
-
-function formatFilters(filters: Record<string, unknown>): string {
-  const parts = Object.entries(filters).map(([key, value]) => `${key}: ${String(value)}`);
-  return parts.length ? parts.join(" · ") : "None";
-}
+  | { kind: "ready"; data: ConversationalSearchResponse };
 
 function SearchResultCard({ result }: { result: HybridSearchResult }) {
   return (
@@ -60,7 +56,18 @@ export function SearchView() {
     }
     setState({ kind: "loading" });
     try {
-      const data = await fetchHybridSearch(trimmed, 12);
+      const current = state.kind === "ready" ? state.data : null;
+      const data = await fetchConversationalSearch(
+        current
+          ? {
+              session_id: current.session_id,
+              expected_revision: current.revision,
+              message: trimmed,
+              limit: 12,
+            }
+          : { query: trimmed, limit: 12 },
+      );
+      setQuery("");
       setState({ kind: "ready", data });
     } catch (error: unknown) {
       const message =
@@ -74,6 +81,23 @@ export function SearchView() {
   }
 
   const ready = state.kind === "ready" ? state.data : null;
+
+  async function removeFilter(field: ConstraintField) {
+    if (!ready) return;
+    setState({ kind: "loading" });
+    try {
+      const data = await fetchConversationalSearch({
+        session_id: ready.session_id,
+        expected_revision: ready.revision,
+        updates: [{ field, operation: "REMOVE" }],
+        limit: 12,
+      });
+      setState({ kind: "ready", data });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Could not remove filter";
+      setState({ kind: "error", message });
+    }
+  }
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-zinc-50">
@@ -103,7 +127,7 @@ export function SearchView() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               rows={3}
-              placeholder="Show me a black dress under ₹4,000 for a wedding."
+              placeholder={ready ? "Refine it: make it blue, size M, show cheaper options…" : "Show me a black dress under ₹4,000 for a wedding."}
               className="resize-none rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-200"
             />
           </label>
@@ -126,9 +150,22 @@ export function SearchView() {
           <section className="flex flex-col gap-4">
             <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-700">
               <p>
-                <span className="font-medium text-zinc-900">Filters:</span>{" "}
-                {formatFilters(ready.filters)}
+                <span className="font-medium text-zinc-900">Active filters:</span>
               </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {ready.active_filters.length === 0 && <span className="text-zinc-500">None</span>}
+                {ready.active_filters.map((filter) => (
+                  <button
+                    key={filter.key}
+                    type="button"
+                    onClick={() => removeFilter(filter.key)}
+                    className="rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1 text-xs text-zinc-800 hover:bg-zinc-100"
+                    aria-label={`Remove ${filter.label}: ${filter.value}`}
+                  >
+                    {filter.label}: {filter.value} <span aria-hidden="true">×</span>
+                  </button>
+                ))}
+              </div>
               <p className="mt-1">
                 <span className="font-medium text-zinc-900">Mode:</span> {ready.search_mode}
                 {ready.embedding_index_status !== "ready" && (
@@ -137,6 +174,9 @@ export function SearchView() {
                     (embeddings: {ready.embedding_index_status})
                   </span>
                 )}
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Revision {ready.revision} · {ready.interpreted_as.replace("_", " ")}
               </p>
               {ready.message && <p className="mt-2 text-zinc-600">{ready.message}</p>}
               {ready.suggestions.length > 0 && (

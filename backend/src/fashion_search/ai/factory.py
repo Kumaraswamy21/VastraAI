@@ -20,11 +20,15 @@ def get_generation_provider(
     if selected == "gemini":
         from fashion_search.generation.gemini import GeminiGenerator
 
-        return GeminiGenerator(cfg, client=client)
+        provider = GeminiGenerator(cfg, client=client)
+        from fashion_search.observability.instrumentation import instrument_generation_provider
+        return instrument_generation_provider(provider, cfg)
     if selected == "ollama":
         from fashion_search.generation.ollama import OllamaGemmaGenerator
 
-        return OllamaGemmaGenerator(cfg, client=client)
+        provider = OllamaGemmaGenerator(cfg, client=client)
+        from fashion_search.observability.instrumentation import instrument_generation_provider
+        return instrument_generation_provider(provider, cfg)
     raise ValueError(f"unsupported generation provider: {selected}")
 
 
@@ -33,11 +37,15 @@ def get_embedding_provider(settings: Settings | None = None) -> EmbeddingProvide
     if cfg.embedding_provider == "gemini":
         from fashion_search.embeddings.gemini import GeminiEmbedder
 
-        return GeminiEmbedder(cfg)
+        provider = GeminiEmbedder(cfg)
+        from fashion_search.observability.instrumentation import instrument_embedding_provider
+        return instrument_embedding_provider(provider, cfg)
     if cfg.embedding_provider == "ollama":
         from fashion_search.embeddings.ollama import OllamaEmbedder
 
-        return OllamaEmbedder(cfg)
+        provider = OllamaEmbedder(cfg)
+        from fashion_search.observability.instrumentation import instrument_embedding_provider
+        return instrument_embedding_provider(provider, cfg)
     raise ValueError(f"unsupported embedding provider: {cfg.embedding_provider}")
 
 

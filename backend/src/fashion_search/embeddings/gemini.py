@@ -15,6 +15,7 @@ from fashion_search.embeddings.errors import (
     EmbeddingTransientError,
     EmbeddingValidationError,
 )
+from fashion_search.observability.schemas import AIUsage
 
 logger = get_logger(__name__)
 
@@ -56,6 +57,11 @@ class GeminiEmbedder(AsyncEmbeddingMixin):
         self.max_retries = self._settings.embedding_max_retries
         self._client = client
         self.api_request_count = 0
+        self._last_usage = AIUsage()
+
+    def take_usage(self) -> AIUsage:
+        usage, self._last_usage = self._last_usage, AIUsage()
+        return usage
 
     @property
     def model_name(self) -> str:
@@ -149,11 +155,15 @@ class GeminiEmbedder(AsyncEmbeddingMixin):
                     len(texts),
                     attempt + 1,
                 )
-                return self._get_client().models.embed_content(
+                response = self._get_client().models.embed_content(
                     model=self.model,
                     contents=texts if len(texts) > 1 else texts[0],
                     config=config,
                 )
+                native = getattr(response, "usage_metadata", None)
+                total = getattr(native, "total_token_count", None)
+                self._last_usage = AIUsage(total_tokens=total)
+                return response
             except EmbeddingConfigError:
                 raise
             except Exception as exc:

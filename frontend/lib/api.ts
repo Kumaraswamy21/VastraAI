@@ -90,6 +90,39 @@ export type HybridSearchResponse = {
   metrics: Record<string, unknown>;
 };
 
+export type ConstraintField =
+  | "category"
+  | "color"
+  | "occasion"
+  | "size"
+  | "gender"
+  | "price_min"
+  | "price_max"
+  | "currency";
+
+export type ActiveFilter = {
+  key: ConstraintField;
+  label: string;
+  value: string;
+  removable: boolean;
+};
+
+export type ConversationalSearchResponse = HybridSearchResponse & {
+  session_id: string;
+  revision: number;
+  interpreted_as: "initial" | "refinement" | "new_search";
+  state: {
+    original_query: string;
+    current_query: string;
+    constraints: Record<string, unknown>;
+    semantic_query: string;
+    semantic_modifiers: string[];
+    sort_preference: "RELEVANCE" | "PRICE_ASC" | "PRICE_DESC";
+    revision: number;
+  };
+  active_filters: ActiveFilter[];
+};
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -184,4 +217,84 @@ export async function fetchHybridSearch(
       signal,
     }),
   );
+}
+
+export async function fetchConversationalSearch(
+  body:
+    | { query: string; limit?: number }
+    | {
+        session_id: string;
+        expected_revision: number;
+        message?: string;
+        updates?: { field: ConstraintField; operation: "REMOVE" }[];
+        limit?: number;
+      },
+  signal?: AbortSignal,
+): Promise<ConversationalSearchResponse> {
+  return readJson(
+    await fetch(`${apiBase()}/search`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal,
+    }),
+  );
+}
+
+export type ObservabilitySummary = {
+  range: string;
+  ai_requests: number;
+  ai_successes: number;
+  ai_avg_latency_ms: number | null;
+  ai_p50_latency_ms: number | null;
+  ai_p95_latency_ms: number | null;
+  total_tokens: number | null;
+  estimated_api_cost: number | null;
+  fallback_count: number;
+  search_requests: number;
+  search_successes: number;
+  zero_result_searches: number;
+  search_avg_latency_ms: number | null;
+  search_p50_latency_ms: number | null;
+  search_p95_latency_ms: number | null;
+  avg_result_count: number | null;
+  hybrid_searches: number;
+  keyword_fallback_searches: number;
+};
+
+export type ProviderMetric = {
+  provider: string;
+  model: string;
+  operation: string;
+  requests: number;
+  successes: number;
+  avg_latency_ms: number | null;
+  p50_latency_ms: number | null;
+  p95_latency_ms: number | null;
+  total_tokens: number | null;
+  estimated_api_cost: number | null;
+  fallback_count: number;
+};
+
+export type RecentProviderEvent = {
+  timestamp: string;
+  request_id: string;
+  search_request_id: string | null;
+  provider: string;
+  model: string;
+  operation: string;
+  outcome: string;
+  latency_ms: number;
+  error_type: string | null;
+  fallback_used: boolean;
+};
+
+export async function fetchObservability<T>(
+  path: string,
+  params: Record<string, string | undefined> = {},
+): Promise<T> {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) if (value) query.set(key, value);
+  const suffix = query.size ? `?${query}` : "";
+  return readJson(await fetch(`${apiBase()}/dev/observability/${path}${suffix}`, { cache: "no-store" }));
 }

@@ -20,6 +20,7 @@ from fashion_search.embeddings.base import (
     require_nonempty,
     validate_embedding,
 )
+from fashion_search.observability.schemas import AIUsage
 
 logger = get_logger(__name__)
 
@@ -37,6 +38,11 @@ class OllamaEmbedder(AsyncEmbeddingMixin):
         self.batch_size = self._settings.embedding_batch_size
         self._client = client
         self.api_request_count = 0
+        self._last_usage = AIUsage()
+
+    def take_usage(self) -> AIUsage:
+        usage, self._last_usage = self._last_usage, AIUsage()
+        return usage
 
     def _http(self):
         return self._client or httpx.Client(
@@ -70,7 +76,12 @@ class OllamaEmbedder(AsyncEmbeddingMixin):
                 "/api/embed", json={"model": self.model_name, "input": texts}
             )
             response.raise_for_status()
-            embeddings = response.json().get("embeddings")
+            data = response.json()
+            embeddings = data.get("embeddings")
+            token_count = data.get("prompt_eval_count")
+            self._last_usage = AIUsage(
+                total_tokens=token_count if isinstance(token_count, int) else None
+            )
             logger.info(
                 "embedding_request provider=%s model=%s count=%s latency_ms=%.1f",
                 self.name, self.model_name, len(texts),

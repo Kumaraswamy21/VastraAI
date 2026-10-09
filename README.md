@@ -144,7 +144,7 @@ docker compose up --build
 - Catalog: http://localhost:3000/catalog
 - Product API: http://localhost:8000/products
 - Embeddings CLI: `embed-catalog` (see [Product embeddings](#product-embeddings-gemini))
-- Hybrid search: `POST /search` or `POST /search/hybrid` (see [Hybrid search](#hybrid-search))
+- Conversational hybrid search: `POST /search`; stateless hybrid search: `POST /search/hybrid` (see [Hybrid search](#hybrid-search))
 - Semantic search: `POST /search/semantic` (see [Semantic search](#semantic-search-pgvector))
 - Constraint parsing: `POST /search/parse` (see [Fashion constraint extraction](#fashion-constraint-extraction))
 
@@ -416,7 +416,10 @@ Unit tests mock Gemini. DB integration tests inject deterministic vectors and do
 
 ## Hybrid search
 
-`POST /search` (alias `POST /search/hybrid`) combines:
+`POST /search/hybrid` performs a stateless hybrid search. `POST /search` uses the
+same retrieval path and adds conversational state/refinement.
+
+Both endpoints combine:
 
 1. Gemini + deterministic **constraint parsing** (hard SQL filters).
 2. **Semantic** retrieval (`RETRIEVAL_QUERY` + pgvector cosine similarity).
@@ -470,6 +473,81 @@ Response includes `filters`, `retrieval_query`, per-result `scores` (`hybrid_sco
 | `HYBRID_CANDIDATE_LIMIT` | 100 |
 
 Rankings are starting defaults; evaluate with representative fashion queries before tuning weights.
+
+## Conversational search refinement
+
+Start a session with `POST /search`:
+
+```json
+{"query":"black dress under ₹4000 for wedding","limit":10}
+```
+
+The response includes `session_id`, `revision`, validated `state`, and deterministic
+`active_filters`. Refine it by sending the returned revision:
+
+```json
+{"session_id":"…","expected_revision":0,"message":"make it blue","limit":10}
+```
+
+Filter chips use the same reducer without synthesizing text:
+
+```json
+{"session_id":"…","expected_revision":1,"updates":[{"field":"occasion","operation":"REMOVE"}]}
+```
+
+State is structured and delta-based; unmentioned constraints remain unchanged.
+Simple colors, sizes, genders, explicit price bounds/removals, category changes, and
+price comparisons are handled deterministically before provider interpretation.
+`cheaper` and `more expensive` preserve all hard bounds and order the retrieved
+candidate set by catalog price ascending or descending respectively; they never
+invent a price threshold. Semantic phrases such as `more casual` are appended to
+the preserved semantic retrieval query rather than converted to unsupported filters.
+
+Sessions are stored in a locked in-process store for this milestone. Optimistic
+revision checks return HTTP 409 for stale writes. State survives zero-result searches,
+but it does not survive process restarts and is not shared across multiple API workers.
+
+## AI and search observability
+
+Application-level telemetry is stored in PostgreSQL after migration
+`20261009_0006`. Provider events and search events are separate and joined through
+`search_request_id`. Provider wrappers record the actual provider/model, operation,
+monotonic latency, normalized outcome, fallback status, reliable native token usage,
+and configurable estimated API cost. Search events record total latency, hybrid-stage
+timings, candidate/result counts, execution mode, and degradation state.
+
+Raw prompts, provider responses, credentials, headers, and API keys are never stored.
+Search text is represented by SHA-256 only unless
+`OBSERVABILITY_STORE_RAW_QUERIES=true` is explicitly enabled.
+
+Developer endpoints:
+
+- `GET /dev/observability/summary?range=24h`
+- `GET /dev/observability/providers?range=24h&provider=gemini`
+- `GET /dev/observability/search?range=24h&search_mode=HYBRID`
+- `GET /dev/observability/requests/{request_id}`
+
+The dashboard is at `/dev/observability` in the frontend. API dashboard routes return
+404 when `APP_ENVIRONMENT=production`, or when observability/dashboard access is
+disabled. No application authentication system currently exists, so production access
+is intentionally unavailable rather than protected by an ad-hoc credential scheme.
+
+Pricing is optional and versioned configuration rather than embedded source-code truth:
+
+```bash
+OBSERVABILITY_PRICING_JSON='{"models":[{"provider":"gemini","model":"configured-model","input_cost_per_million_tokens":"...","output_cost_per_million_tokens":"...","currency":"USD","effective_date":"YYYY-MM-DD"}]}'
+```
+
+Unknown pricing stays null. Ollama API cost also stays null because local compute cost
+is outside this milestone. Remove expired records manually or from an existing scheduler:
+
+```bash
+cleanup-observability
+```
+
+Retention defaults to `OBSERVABILITY_RETENTION_DAYS=30`. Search-stage timings are
+currently sequential, but total latency also includes orchestration and database work,
+so stage values are not expected to sum exactly to the total.
 
 ## Fashion constraint extraction
 

@@ -18,6 +18,7 @@ from fashion_search.ai.errors import (
 from fashion_search.config.settings import Settings, get_settings
 from fashion_search.core.logging import get_logger
 from fashion_search.generation.base import AsyncGenerationMixin, GenerationProvider
+from fashion_search.observability.schemas import AIUsage
 
 T = TypeVar("T", bound=BaseModel)
 logger = get_logger(__name__)
@@ -35,6 +36,11 @@ class GeminiGenerator(AsyncGenerationMixin):
             or self._settings.search_parser_model
         )
         self._client = client
+        self._last_usage = AIUsage()
+
+    def take_usage(self) -> AIUsage:
+        usage, self._last_usage = self._last_usage, AIUsage()
+        return usage
 
     def _api_key(self) -> str:
         key = (self._settings.gemini_api_key or self._settings.google_api_key).strip()
@@ -104,6 +110,12 @@ class GeminiGenerator(AsyncGenerationMixin):
             try:
                 response = self._get_client().models.generate_content(
                     model=self.model_name, contents=prompt, config=config
+                )
+                native = getattr(response, "usage_metadata", None)
+                self._last_usage = AIUsage(
+                    input_tokens=getattr(native, "prompt_token_count", None),
+                    output_tokens=getattr(native, "candidates_token_count", None),
+                    total_tokens=getattr(native, "total_token_count", None),
                 )
                 logger.info(
                     "generation_request provider=%s model=%s latency_ms=%.1f",

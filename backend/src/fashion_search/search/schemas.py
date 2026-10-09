@@ -127,6 +127,66 @@ class HybridSearchRequest(BaseModel):
         return value.strip()
 
 
+ConstraintField = Literal[
+    "category", "color", "occasion", "size", "gender",
+    "price_min", "price_max", "currency",
+]
+ConstraintOperation = Literal["SET", "REMOVE", "KEEP", "RELAX"]
+SortPreference = Literal["RELEVANCE", "PRICE_ASC", "PRICE_DESC"]
+
+
+class ConstraintUpdate(BaseModel):
+    """One validated delta to the authoritative constraint state."""
+
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+    field: ConstraintField
+    operation: ConstraintOperation
+    value: str | Decimal | None = None
+    inclusive: bool | None = None
+
+    @model_validator(mode="after")
+    def validate_operation_value(self) -> "ConstraintUpdate":
+        if self.operation == "SET" and self.value is None:
+            raise ValueError("SET requires a value")
+        if self.operation != "SET" and self.value is not None:
+            raise ValueError(f"{self.operation} does not accept a value")
+        if self.inclusive is not None and not (
+            self.operation == "SET" and self.field in {"price_min", "price_max"}
+        ):
+            raise ValueError("inclusive is valid only when setting a price bound")
+        return self
+
+
+class SearchRefinement(BaseModel):
+    """Delta returned by deterministic or provider-based interpretation."""
+
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+    updates: list[ConstraintUpdate] = Field(default_factory=list)
+    sort_preference: SortPreference | None = None
+    semantic_refinement: str | None = Field(default=None, max_length=200)
+    reset_search: bool = False
+
+
+class SearchState(BaseModel):
+    """Structured, client-carried authoritative state for one search session."""
+
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+    original_query: str = Field(min_length=1, max_length=500)
+    current_query: str = Field(min_length=1, max_length=500)
+    constraints: FashionSearchConstraints = Field(default_factory=FashionSearchConstraints)
+    semantic_query: str = Field(min_length=1, max_length=1000)
+    semantic_modifiers: list[str] = Field(default_factory=list, max_length=12)
+    sort_preference: SortPreference = "RELEVANCE"
+    revision: int = Field(default=0, ge=0)
+
+
+class ActiveFilter(BaseModel):
+    key: ConstraintField
+    label: str
+    value: str
+    removable: bool = True
+
+
 class HybridSearchScores(BaseModel):
     """Ranking diagnostics for one hybrid result (RRF is not a probability)."""
 
@@ -206,3 +266,4 @@ class HybridSearchResponse(BaseModel):
     semantic_search_available: bool = True
     embedding_index_status: Literal["ready", "empty", "incompatible", "unknown"] = "unknown"
     metrics: dict[str, object] = Field(default_factory=dict)
+    request_id: str | None = None

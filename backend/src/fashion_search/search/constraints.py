@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 CATEGORIES = frozenset(profile.category for profile in PROFILES)
 # Search vocabulary includes explicit milestone colors that are valid product metadata
 # even though the current deterministic seed palette does not generate all of them.
-COLORS_SUPPORTED = frozenset((*COLORS, "red", "blue", "gray"))
+COLORS_SUPPORTED = frozenset((*COLORS, "red", "blue", "gray", "purple"))
 OCCASIONS = frozenset(occasion for profile in PROFILES for occasion in profile.occasions)
 SIZES = frozenset(size for profile in PROFILES for size in profile.sizes)
 GENDERS = frozenset(gender for profile in PROFILES for gender in profile.genders)
@@ -35,6 +35,7 @@ CATEGORY_ALIASES = {
     "t shirts": "t-shirt", "tshirt": "t-shirt", "tshirts": "t-shirt",
     "trainer": "footwear", "trainers": "footwear", "sneaker": "footwear",
     "sneakers": "footwear", "kurti": "kurta", "kurtis": "kurta",
+    "running shoe": "footwear", "running shoes": "footwear",
     "sarees": "saree", "shirts": "shirt", "dresses": "dress",
 }
 COLOR_ALIASES = {"navy": "navy blue", "grey": "gray"}

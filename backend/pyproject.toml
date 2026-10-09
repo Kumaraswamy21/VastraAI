@@ -19,6 +19,7 @@ dependencies = [
 seed-catalog = "fashion_search.catalog.seed:main"
 verify-catalog = "fashion_search.catalog.verify:main"
 embed-catalog = "fashion_search.embeddings.cli:main"
+cleanup-observability = "fashion_search.observability.cleanup:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -144,6 +144,9 @@ def hybrid_search(
     settings: Settings | None = None,
     embedder: EmbeddingProvider | None = None,
     constraint_client: Any | None = None,
+    resolved_constraints: FashionSearchConstraints | None = None,
+    resolved_query: str | None = None,
+    sort_preference: str = "RELEVANCE",
 ) -> HybridSearchResponse:
     """Parse constraints, retrieve, fuse with RRF, and return ranked products."""
     cfg = settings or get_settings()
@@ -154,9 +157,13 @@ def hybrid_search(
     started = time.perf_counter()
 
     parse_started = time.perf_counter()
-    parsed = parse_constraints(query, settings=cfg, client=constraint_client)
-    constraints = parsed.constraints
-    retrieval_query = build_retrieval_query(query, constraints)
+    if resolved_constraints is None:
+        parsed = parse_constraints(query, settings=cfg, client=constraint_client)
+        constraints = parsed.constraints
+    else:
+        constraints = resolved_constraints
+    retrieval_source = resolved_query.strip() if resolved_query else query
+    retrieval_query = build_retrieval_query(retrieval_source, constraints)
     parse_ms = (time.perf_counter() - parse_started) * 1000
 
     if not constraints_currency_supported(constraints, settings=cfg):
@@ -276,6 +283,19 @@ def hybrid_search(
         semantic_weight=cfg.hybrid_semantic_weight,
         keyword_weight=cfg.hybrid_keyword_weight,
     )
+    if sort_preference in {"PRICE_ASC", "PRICE_DESC"}:
+        products_for_price = {
+            hit.product.id: hit.product for hit in (*semantic_hits, *keyword_hits)
+        }
+        reverse = sort_preference == "PRICE_DESC"
+        fused.sort(
+            key=lambda row: (
+                -products_for_price[row.product_id].price_inr if reverse
+                else products_for_price[row.product_id].price_inr,
+                -row.hybrid_score,
+                row.product_id,
+            )
+        )
     fused = fused[: request.limit]
     fusion_ms = (time.perf_counter() - fusion_started) * 1000
 

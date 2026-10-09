@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     market_currency: str = Field(default="INR", pattern=r"^[A-Za-z]{3}$")
     cors_origins: str = "http://localhost:3000"
     log_level: str = "INFO"
+    app_environment: str = Field(default="production", pattern=r"^(development|test|production)$")
+    observability_enabled: bool = True
+    observability_retention_days: int = Field(default=30, ge=1, le=3650)
+    observability_store_raw_queries: bool = False
+    observability_dashboard_enabled: bool = True
+    observability_pricing_json: str = "{}"
 
     @field_validator("generation_fallback_provider", mode="before")
     @classmethod

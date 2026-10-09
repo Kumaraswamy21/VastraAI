@@ -17,6 +17,7 @@ from fashion_search.ai.errors import (
 from fashion_search.config.settings import Settings, get_settings
 from fashion_search.core.logging import get_logger
 from fashion_search.generation.base import AsyncGenerationMixin, GenerationProvider
+from fashion_search.observability.schemas import AIUsage
 
 T = TypeVar("T", bound=BaseModel)
 logger = get_logger(__name__)
@@ -31,6 +32,11 @@ class OllamaGemmaGenerator(AsyncGenerationMixin):
         self._settings = settings or get_settings()
         self.model_name = self._settings.ollama_generation_model
         self._client = client
+        self._last_usage = AIUsage()
+
+    def take_usage(self) -> AIUsage:
+        usage, self._last_usage = self._last_usage, AIUsage()
+        return usage
 
     def _http(self):
         return self._client or httpx.Client(
@@ -71,6 +77,13 @@ class OllamaGemmaGenerator(AsyncGenerationMixin):
             response = self._http().post(path, json=payload)
             response.raise_for_status()
             data = response.json()
+            input_tokens = data.get("prompt_eval_count")
+            output_tokens = data.get("eval_count")
+            self._last_usage = AIUsage(
+                input_tokens=input_tokens if isinstance(input_tokens, int) else None,
+                output_tokens=output_tokens if isinstance(output_tokens, int) else None,
+                total_tokens=(input_tokens + output_tokens) if isinstance(input_tokens, int) and isinstance(output_tokens, int) else None,
+            )
             logger.info(
                 "generation_request provider=%s model=%s latency_ms=%.1f",
                 self.name, self.model_name, (time.perf_counter() - started) * 1000,

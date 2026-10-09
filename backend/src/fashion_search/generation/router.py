@@ -12,6 +12,7 @@ from fashion_search.ai.factory import (
 from fashion_search.config.settings import Settings, get_settings
 from fashion_search.core.logging import get_logger
 from fashion_search.generation.base import AsyncGenerationMixin, GenerationProvider
+from fashion_search.observability.context import fallback_context
 
 T = TypeVar("T", bound=BaseModel)
 logger = get_logger(__name__)
@@ -53,7 +54,8 @@ class GenerationRouter(AsyncGenerationMixin):
                 "generation_fallback primary=%s fallback=%s",
                 self._primary.name, self._fallback.name,
             )
-            return getattr(self._fallback, method)(*args, **kwargs)
+            with fallback_context():
+                return getattr(self._fallback, method)(*args, **kwargs)
 
     @property
     def name(self) -> str:
