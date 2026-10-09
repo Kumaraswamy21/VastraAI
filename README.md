@@ -2,7 +2,7 @@
 
 A production-style conversational shopping assistant. A customer describes an outfit or product in natural language and receives ranked catalog results as clickable links. The assistant can ask a clarifying question, or accept extra detail the customer adds on their own. It only answers fashion-catalog questions.
 
-The stack runs end to end against hosted Neon PostgreSQL. Catalog browsing, Gemini product embeddings, and pgvector semantic search are available. Hybrid keyword + vector ranking is not implemented yet.
+The stack runs end to end against hosted Neon PostgreSQL. Catalog browsing, Gemini embeddings, pgvector semantic search, PostgreSQL full-text keyword search, and RRF hybrid ranking are available.
 
 ## Target user
 
@@ -92,7 +92,7 @@ Backend packages live under `backend/src/fashion_search/`: `api`, `catalog`, `se
 | --- | --- |
 | **Day 1** | Scaffold: packages, README, health check, placeholder UI. |
 | **Day 2** | Neon connectivity, Compose for API + UI, catalog models/migrations, synthetic seed catalog, browse UI. |
-| **Day 3** | Gemini embeddings + pgvector cosine semantic search (done). Next: hybrid ranking / keyword search. |
+| **Day 3** | Gemini embeddings, pgvector semantic search, PostgreSQL FTS, hybrid RRF search (done). Next: conversational session + UI wiring. |
 | **Day 4** | Conversational session, filter extraction, clarification turns, domain lock-in, Gemini/Ollama generation. |
 | **Day 5** | UI for chat + product links, ranking polish, error paths, review against success measures. |
 
@@ -110,6 +110,7 @@ docker compose up --build
 - Catalog: http://localhost:3000/catalog
 - Product API: http://localhost:8000/products
 - Embeddings CLI: `embed-catalog` (see [Product embeddings](#product-embeddings-gemini))
+- Hybrid search: `POST /search` or `POST /search/hybrid` (see [Hybrid search](#hybrid-search))
 - Semantic search: `POST /search/semantic` (see [Semantic search](#semantic-search-pgvector))
 - Constraint parsing: `POST /search/parse` (see [Fashion constraint extraction](#fashion-constraint-extraction))
 
@@ -315,10 +316,66 @@ Unit tests mock Gemini. DB integration tests inject deterministic vectors and do
 
 ### Known limitations
 
-- Hybrid keyword + vector ranking is not implemented (`POST /search` remains 501).
-- Results depend on products having COMPLETED Gemini embeddings.
+- Semantic-only endpoint does not apply parsed hard filters.
+- Hybrid semantic path still needs COMPLETED Gemini embeddings; keyword path works without them.
 - No result caching layer.
-- No structured filter merge on the semantic endpoint yet (browse filters remain on `GET /products`).
+
+## Hybrid search
+
+`POST /search` (alias `POST /search/hybrid`) combines:
+
+1. Gemini + deterministic **constraint parsing** (hard SQL filters).
+2. **Semantic** retrieval (`RETRIEVAL_QUERY` + pgvector cosine similarity).
+3. **Keyword** retrieval (PostgreSQL `websearch_to_tsquery` + `ts_rank_cd`).
+4. **Reciprocal Rank Fusion** (default `k=60`, weights `0.6` semantic / `0.4` keyword).
+
+Hard filters (category, color, occasion, gender, size, INR price bounds) are applied inside both retrieval queries before ranking.
+
+### PostgreSQL full-text search
+
+Weighted `search_vector` on `products` (maintained by trigger on insert/update):
+
+| Weight | Fields |
+| --- | --- |
+| A | `title` |
+| B | `category` |
+| C | `color`, `material`, `style` |
+| D | `description` |
+
+Migration `20261008_0004` adds the trigger, backfill, and GIN index `products_search_vector_gin_idx`. The catalog has no separate `brand` or `subcategory` columns; those weights are omitted.
+
+### Retrieval query preprocessing
+
+When explicit INR prices are extracted, price phrases are stripped from the text used for semantic/keyword retrieval (for example `black dress under ₹4000` → `black dress`).
+
+### Example
+
+```json
+POST /search/hybrid
+{
+  "query": "black dress under ₹4000 for wedding",
+  "limit": 10
+}
+```
+
+Response includes `filters`, `retrieval_query`, per-result `scores` (`hybrid_score`, ranks, semantic similarity), and `metrics` (latencies, candidate counts, `fallback` when only one path succeeded).
+
+### Failure behavior
+
+- Gemini/embeddings unavailable → keyword-only fallback when FTS succeeds.
+- Keyword/FTS failure → semantic-only fallback when embeddings succeed.
+- Both paths fail → HTTP 503 (not a silent empty search).
+
+### Configuration
+
+| Variable | Default |
+| --- | --- |
+| `HYBRID_RRF_K` | 60 |
+| `HYBRID_SEMANTIC_WEIGHT` | 0.6 |
+| `HYBRID_KEYWORD_WEIGHT` | 0.4 |
+| `HYBRID_CANDIDATE_LIMIT` | 100 |
+
+Rankings are starting defaults; evaluate with representative fashion queries before tuning weights.
 
 ## Fashion constraint extraction
 
@@ -427,4 +484,4 @@ RUN_GEMINI_INTEGRATION=1 python -m unittest \
 
 Known limitations: English is the current MVP language; approximate budgets are not
 represented; unsupported terminology remains only in the semantic query; and parsed
-constraints are not yet translated into SQL filters or hybrid ranking.
+`POST /search` and `POST /search/hybrid` apply parsed constraints as hard SQL filters during retrieval.

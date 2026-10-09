@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 from fashion_search.catalog.models import Product
 from fashion_search.config.settings import Settings, get_settings
 from fashion_search.core.db import get_engine
+from fashion_search.search.filters import apply_search_constraints
+from fashion_search.search.schemas import FashionSearchConstraints
 
 
 @dataclass(frozen=True)
@@ -24,6 +26,7 @@ def search_by_vector(
     query_embedding: list[float],
     *,
     limit: int = 10,
+    constraints: FashionSearchConstraints | None = None,
     settings: Settings | None = None,
 ) -> list[VectorHit]:
     """Return products ordered by cosine distance to the query vector.
@@ -50,9 +53,10 @@ def search_by_vector(
         .where(Product.embedding_provider == "gemini")
         .where(Product.embedding_model == cfg.embedding_model)
         .where(Product.embedding_dimensions == cfg.embedding_dimensions)
-        .order_by(distance)
-        .limit(limit)
     )
+    if constraints is not None:
+        statement = apply_search_constraints(statement, constraints)
+    statement = statement.order_by(distance).limit(limit)
     with Session(get_engine(), expire_on_commit=False) as session:
         rows = session.execute(statement).all()
         return [

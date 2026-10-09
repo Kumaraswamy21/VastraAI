@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     search_parser_temperature: float = Field(default=0.0, ge=0, le=2)
     search_parser_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
     search_parser_max_retries: int = Field(default=1, ge=0, le=3)
+    hybrid_rrf_k: int = Field(default=60, ge=1, le=500)
+    hybrid_semantic_weight: float = Field(default=0.6, gt=0, le=1)
+    hybrid_keyword_weight: float = Field(default=0.4, gt=0, le=1)
+    hybrid_candidate_limit: int = Field(default=100, ge=10, le=500)
     market_currency: str = Field(default="INR", pattern=r"^[A-Za-z]{3}$")
     cors_origins: str = "http://localhost:3000"
     log_level: str = "INFO"
