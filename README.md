@@ -16,6 +16,8 @@ Captured from the running product (color swatches represent the synthetic catalo
 
 See [architecture](docs/architecture.md) and [ADRs](docs/adr/).
 
+For hosted deployment, see the [Vercel + Render + Neon deployment guide](docs/deployment.md).
+
 ## Prerequisites
 
 - Docker Engine with Compose (for PostgreSQL 16 + pgvector; optionally the app containers).
