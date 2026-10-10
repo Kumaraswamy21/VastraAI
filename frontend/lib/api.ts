@@ -226,7 +226,12 @@ export async function fetchConversationalSearch(
         session_id: string;
         expected_revision: number;
         message?: string;
-        updates?: { field: ConstraintField; operation: "REMOVE" }[];
+        updates?: {
+          field: ConstraintField;
+          operation: "SET" | "REMOVE" | "KEEP" | "RELAX";
+          value?: string | number;
+          inclusive?: boolean | null;
+        }[];
         limit?: number;
       },
   signal?: AbortSignal,

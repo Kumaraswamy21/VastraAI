@@ -41,6 +41,27 @@ from fashion_search.search.vector import (
 logger = get_logger(__name__)
 
 
+def _has_fashion_intent(query: str, constraints: FashionSearchConstraints) -> bool:
+    """Conservative boundary: unrelated questions must not become product searches."""
+    if any(
+        getattr(constraints, field) is not None
+        for field in (
+            "category", "color", "occasion", "size", "gender", "price_min", "price_max"
+        )
+    ):
+        return True
+    terms = (
+        "shop", "buy", "wear", "outfit", "clothing", "clothes", "fashion",
+        "show", "find", "looking", "need",
+        "apparel", "look", "similar", "recommend", "product", "products",
+        "dress", "shirt", "t-shirt", "trouser", "jeans", "shoe", "shoes",
+        "sneaker", "saree", "kurta", "jacket", "skirt", "top", "accessory",
+        "accessories", "wearing",
+    )
+    words = set(query.casefold().replace("-", " ").split())
+    return any(term in words for term in terms)
+
+
 class HybridSearchError(Exception):
     """Hybrid search failed for a mapped HTTP status."""
 
@@ -169,6 +190,18 @@ def hybrid_search(
     retrieval_source = resolved_query.strip() if resolved_query else query
     retrieval_query = build_retrieval_query(retrieval_source, constraints)
     parse_ms = (time.perf_counter() - parse_started) * 1000
+
+    # Do not send arbitrary questions through semantic retrieval: embeddings will
+    # always find some nearby catalog items even when the query is unrelated.
+    if not _has_fashion_intent(query, constraints):
+        return _empty_response(
+            query,
+            constraints,
+            retrieval_query=retrieval_query,
+            parse_ms=parse_ms,
+            status="off_topic",
+            message="I can help find clothing, footwear, and accessories. Try describing what you want to shop for.",
+        )
 
     if not constraints_currency_supported(constraints, settings=cfg):
         logger.info(

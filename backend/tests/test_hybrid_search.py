@@ -15,7 +15,7 @@ from fashion_search.search.filters import (
     apply_search_constraints,
     constraints_currency_supported,
 )
-from fashion_search.search.hybrid import hybrid_search
+from fashion_search.search.hybrid import _has_fashion_intent, hybrid_search
 from fashion_search.search.keyword import search_by_keyword
 from fashion_search.search.preprocess import build_retrieval_query
 from fashion_search.search.ranking import reciprocal_rank_fusion
@@ -38,6 +38,13 @@ def database_url_configured() -> bool:
 
 
 class RrfTests(unittest.TestCase):
+    def test_unrelated_queries_do_not_enter_product_retrieval(self) -> None:
+        empty = FashionSearchConstraints()
+        self.assertFalse(_has_fashion_intent("Who is the CEO of Anthropic?", empty))
+        self.assertFalse(_has_fashion_intent("What is the capital of France?", empty))
+        self.assertTrue(_has_fashion_intent("Show me something for a wedding", empty))
+        self.assertTrue(_has_fashion_intent("black dresses", empty))
+
     def test_rrf_prefers_items_in_both_lists(self) -> None:
         semantic = [(1, 0.9), (2, 0.8)]
         keyword = [(2, 0.5), (3, 0.4)]

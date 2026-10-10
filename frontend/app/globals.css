@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f5f1;
+  --foreground: #292524;
 }
 
 @theme inline {
@@ -12,15 +12,34 @@
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.product-art {
+  background:
+    radial-gradient(ellipse at 50% 112%, color-mix(in srgb, var(--fabric) 22%, white), transparent 55%),
+    linear-gradient(145deg, #f2eee7, #e8e1d6 60%, #f8f5ef);
+}
+
+.garment-shape {
+  position: absolute;
+  left: 50%;
+  top: 14%;
+  width: 48%;
+  height: 70%;
+  transform: translateX(-50%);
+  background: linear-gradient(110deg, color-mix(in srgb, var(--fabric) 88%, white), var(--fabric) 48%, color-mix(in srgb, var(--fabric) 76%, black));
+  clip-path: polygon(28% 0, 42% 4%, 50% 13%, 58% 4%, 72% 0, 100% 12%, 83% 39%, 73% 32%, 82% 100%, 18% 100%, 27% 32%, 17% 39%, 0 12%);
+  filter: drop-shadow(0 15px 14px rgb(68 53 38 / 16%));
+  opacity: .94;
+  transition: transform .35s ease;
+}
+
+.group:hover .garment-shape { transform: translateX(-50%) translateY(-4px); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }

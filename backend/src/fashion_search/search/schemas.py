@@ -272,6 +272,7 @@ class HybridSearchResponse(BaseModel):
         "no_relevant_matches",
         "no_results",
         "unsupported_constraints",
+        "off_topic",
     ] = "success"
     message: str | None = None
     suggestions: list[str] = Field(default_factory=list)
