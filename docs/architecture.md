@@ -3,16 +3,22 @@
 The Next.js App Router frontend calls the FastAPI API. SQLAlchemy accesses one PostgreSQL database containing products, pgvector embeddings, a weighted full-text `tsvector`, and observability events. Alembic owns schema changes. The seeded catalog has 750 deterministic synthetic products; it has no product photography, only color swatches in the current UI.
 
 ```text
-Natural-language request
-  -> constraint extraction (generation provider, then deterministic fallback)
-  -> structured SearchState (initial or delta-based refinement)
-  -> semantic query plus compatible query embedding -> pgvector candidates
-  -> normalized keyword query -> PostgreSQL full-text candidates
-  -> reciprocal-rank fusion -> exact metadata filters -> deduplication
-  -> grounded match explanations -> API results and active-filter chips
+User query or conversation turn
+  -> current SearchState and authoritative exact constraints
+  -> compatible query embedding -> pgvector candidates (when available)
+  -> normalized query -> PostgreSQL full-text candidates
+  -> existing reciprocal-rank fusion and exact metadata filtering
+  -> product cards and grounded match explanations
+  -> for contextual product questions only: bounded product context
+  -> existing GenerationProvider -> structured claim/reference validation
+  -> concise catalog-grounded answer alongside the products
 ```
 
-The hybrid search orchestrator records stage durations, candidate counts, search mode, and fallback state. If the compatible embedding index or query embedding is unavailable, the keyword channel can still serve results. It never silently loosens exact filters. Zero exact matches retain the requested filters and return diagnostic suggestions.
+The hybrid search orchestrator records stage durations, candidate counts, search mode, and fallback state. If the compatible embedding index or query embedding is unavailable, the keyword channel can still serve results. It never silently loosens exact category, color-family, occasion, size, gender, or price filters. Broad color requests such as blue match the catalog's blue shades; named shades such as navy blue remain exact. Zero exact matches retain the requested filters and return diagnostic suggestions.
+
+## Grounded product answers
+
+RAG consumes only the final products returned by the current search. Context is an allowlist of useful catalog fields with configurable top-K and description limits; it excludes vectors, ranking internals, and database metadata. The existing generation provider returns structured product references and attribute claims. Pydantic validation rejects references outside the supplied context and claims whose values do not match catalog data. The server renders the short answer from validated claims; raw model prose is not displayed. Missing catalog fields stay unknown. Empty results, filter changes, and deterministic confirmations do not invoke RAG. Provider failures preserve the product response and use a safe fallback.
 
 ## Conversation and sessions
 
@@ -26,6 +32,6 @@ Search code uses `GenerationProvider` and `EmbeddingProvider`; Gemini and Ollama
 
 ## Observability and evaluation
 
-Provider and search events share a request correlation ID. They record operational metadata, timings, results, and token usage when available, without storing prompts by default. Telemetry writes fail open. Developer API routes under `/dev/observability` are disabled when `APP_ENVIRONMENT=production`; the frontend dashboard at `/dev/observability` is for local development only, **not authenticated admin access**.
+Provider and search events share a request correlation ID. They record operational metadata, retrieval and RAG timings, context count/size, generation provider/model, grounding failures, results, and token usage when available, without storing prompts by default. Telemetry writes fail open. Developer API routes under `/dev/observability` are disabled when `APP_ENVIRONMENT=production`; the frontend dashboard at `/dev/observability` is for local development only, **not authenticated admin access**.
 
-The versioned, human-labelled evaluation under `backend/evaluation/` runs in deterministic `offline_keyword` mode against a checksum-pinned catalog. It assesses extraction, ranked retrieval, hard constraints, empty results, conversation transitions, explanations, and latency. It does **not** measure live hybrid quality or provider cost. See [the evaluation guide](../backend/evaluation/README.md).
+The versioned, human-labelled evaluation under `backend/evaluation/` supports deterministic offline FTS and semantic/hybrid modes against the same checksum-pinned catalog. The `hybrid_rag` mode adds deterministic adversarial grounding checks but does not call a live text generator. Thus it does not measure generated-answer quality, live RAG latency, or provider cost. See [the evaluation guide](../backend/evaluation/README.md) and [v2.0.0 release notes](releases/v2.0.0.md).

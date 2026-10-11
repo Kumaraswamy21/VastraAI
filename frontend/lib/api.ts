@@ -83,6 +83,8 @@ export type HybridSearchResponse = {
   results: HybridSearchResult[];
   search_status: string;
   message?: string | null;
+  answer?: string | null;
+  referenced_product_ids: number[];
   suggestions: string[];
   search_mode: string;
   semantic_search_available: boolean;

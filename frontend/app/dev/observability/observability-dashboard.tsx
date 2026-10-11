@@ -63,7 +63,7 @@ export function ObservabilityDashboard() {
     ["Fallbacks", summary.fallback_count],
   ] : [];
 
-  const stages = ["constraint_parsing_ms", "query_embedding_ms", "semantic_search_ms", "keyword_search_ms", "fusion_ms", "explanation_ms"];
+  const stages = ["constraint_parsing_ms", "query_embedding_ms", "semantic_search_ms", "keyword_search_ms", "fusion_ms", "explanation_ms", "retrieval_latency_ms", "rag_generation_latency_ms", "total_rag_latency_ms"];
   return (
     <main className="min-h-screen bg-zinc-50 p-6 text-zinc-900">
       <div className="mx-auto max-w-7xl space-y-8">

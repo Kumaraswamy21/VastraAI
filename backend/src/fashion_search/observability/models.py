@@ -60,6 +60,18 @@ class SearchEvent(Base):
     keyword_search_ms: Mapped[float | None] = mapped_column(Float)
     fusion_ms: Mapped[float | None] = mapped_column(Float)
     explanation_ms: Mapped[float | None] = mapped_column(Float)
+    retrieval_latency_ms: Mapped[float | None] = mapped_column(Float)
+    rag_generation_latency_ms: Mapped[float | None] = mapped_column(Float)
+    total_rag_latency_ms: Mapped[float | None] = mapped_column(Float)
+    retrieved_context_count: Mapped[int | None] = mapped_column(Integer)
+    context_size_chars: Mapped[int | None] = mapped_column(Integer)
+    generation_model: Mapped[str | None] = mapped_column(String(160))
+    grounding_failure: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    invalid_product_reference: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
     semantic_candidate_count: Mapped[int | None] = mapped_column(Integer)
     keyword_candidate_count: Mapped[int | None] = mapped_column(Integer)
     final_result_count: Mapped[int | None] = mapped_column(Integer)

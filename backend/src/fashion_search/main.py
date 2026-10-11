@@ -20,7 +20,7 @@ def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
         title="VastraAI",
-        version="0.1.0",
+        version="2.0.0",
         description="Conversational fashion catalog search API.",
     )
     app.add_middleware(

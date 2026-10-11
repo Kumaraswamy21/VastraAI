@@ -247,6 +247,7 @@ class HybridSearchResult(BaseModel):
     style: str
     gender: str
     occasion: str
+    description: str = ""
     sizes: list[str] = Field(default_factory=list)
     price_inr: int
     currency: str = "INR"
@@ -275,6 +276,8 @@ class HybridSearchResponse(BaseModel):
         "off_topic",
     ] = "success"
     message: str | None = None
+    answer: str | None = None
+    referenced_product_ids: list[int] = Field(default_factory=list)
     suggestions: list[str] = Field(default_factory=list)
     diagnostics: SearchDiagnostics | None = None
     search_mode: Literal["hybrid", "keyword_fallback", "semantic_fallback"] = "hybrid"

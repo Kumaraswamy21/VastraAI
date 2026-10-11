@@ -6,6 +6,7 @@ export type ConversationMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  productIds?: number[];
 };
 
 export type SearchSnapshot = {
@@ -51,7 +52,7 @@ export function restoreSnapshot(storage: Pick<Storage, "getItem">): SearchSnapsh
     }
     const snapshot = value as SearchSnapshot;
     if (!snapshot.data || !Array.isArray(snapshot.messages) || !snapshot.messages.every((message) =>
-      typeof message.id === "string" && (message.role === "user" || message.role === "assistant") && typeof message.content === "string"
+      typeof message.id === "string" && (message.role === "user" || message.role === "assistant") && typeof message.content === "string" && (message.productIds === undefined || (Array.isArray(message.productIds) && message.productIds.every((id) => Number.isInteger(id))) )
     )) return null;
     return snapshot;
   } catch {

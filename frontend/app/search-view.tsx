@@ -109,12 +109,12 @@ export function SearchView() {
             limit: 12,
           }
         : { query: trimmed, limit: 12 });
-      const reply = data.search_status === "off_topic"
+      const reply = data.answer || (data.search_status === "off_topic"
         ? "I can help you find clothing, footwear and accessories. Tell me what you are shopping for."
         : data.total === 0
           ? "I couldn’t find an exact match for those preferences. You can remove a filter to broaden your selection."
-          : "I found options that match your preferences.";
-      const assistantMessage: ConversationMessage = { id: `${Date.now()}-assistant`, role: "assistant", content: reply };
+          : "I found options that match your preferences.");
+      const assistantMessage: ConversationMessage = { id: `${Date.now()}-assistant`, role: "assistant", content: reply, productIds: data.referenced_product_ids };
       setView((previous) => ({ status: "ready", data, error: null, messages: [...previous.messages, assistantMessage] }));
       setConversationOpen(true);
     } catch (error: unknown) {
@@ -192,7 +192,7 @@ export function SearchView() {
         ) : (
           <div className="grid items-start gap-7 lg:grid-cols-[minmax(280px,350px)_minmax(0,1fr)] xl:gap-10">
             <aside className="hidden lg:sticky lg:top-[82px] lg:block">
-              <ConversationPanel view={view} setDraft={setDraft} onSubmit={onSubmit} transcriptRef={transcriptRef} shouldFollowRef={shouldFollowRef} busy={busy} />
+              <ConversationPanel view={view} draft={draft} setDraft={setDraft} onSubmit={onSubmit} transcriptRef={transcriptRef} shouldFollowRef={shouldFollowRef} busy={busy} />
             </aside>
             <section className="min-w-0">
               <div className="mb-5 flex items-center justify-between gap-3 lg:hidden">
@@ -236,15 +236,16 @@ export function SearchView() {
         )}
       </main>
 
-      {conversationOpen && data && <div className="fixed inset-0 z-50 flex items-end bg-stone-950/35 lg:hidden" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setConversationOpen(false); }}><section role="dialog" aria-modal="true" aria-label="VastraAI shopping conversation" className="max-h-[90dvh] w-full overflow-hidden rounded-t-[1.5rem] bg-[#fbfaf8] p-4 shadow-2xl"><div className="mx-auto mb-3 h-1 w-10 rounded-full bg-stone-300" /><div className="mb-3 flex items-center justify-between"><p className="font-serif text-xl">Shopping with VastraAI</p><button onClick={() => setConversationOpen(false)} aria-label="Close conversation" className="grid size-9 place-items-center rounded-full border border-stone-200">×</button></div><ConversationPanel view={view} setDraft={setDraft} onSubmit={onSubmit} transcriptRef={transcriptRef} shouldFollowRef={shouldFollowRef} busy={busy} compact /></section></div>}
+      {conversationOpen && data && <div className="fixed inset-0 z-50 flex items-end bg-stone-950/35 lg:hidden" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setConversationOpen(false); }}><section role="dialog" aria-modal="true" aria-label="VastraAI shopping conversation" className="max-h-[90dvh] w-full overflow-hidden rounded-t-[1.5rem] bg-[#fbfaf8] p-4 shadow-2xl"><div className="mx-auto mb-3 h-1 w-10 rounded-full bg-stone-300" /><div className="mb-3 flex items-center justify-between"><p className="font-serif text-xl">Shopping with VastraAI</p><button onClick={() => setConversationOpen(false)} aria-label="Close conversation" className="grid size-9 place-items-center rounded-full border border-stone-200">×</button></div><ConversationPanel view={view} draft={draft} setDraft={setDraft} onSubmit={onSubmit} transcriptRef={transcriptRef} shouldFollowRef={shouldFollowRef} busy={busy} compact /></section></div>}
     </div>
   );
 }
 
 function ConversationPanel({
-  view, setDraft, onSubmit, transcriptRef, shouldFollowRef, busy, compact = false,
+  view, draft, setDraft, onSubmit, transcriptRef, shouldFollowRef, busy, compact = false,
 }: {
   view: ViewState;
+  draft: string;
   setDraft: (value: string) => void;
   onSubmit: (event: React.SyntheticEvent) => void;
   transcriptRef: React.RefObject<HTMLDivElement | null>;
@@ -257,14 +258,14 @@ function ConversationPanel({
     <div className="border-b border-stone-100 px-5 py-4"><div className="flex items-center gap-3"><SearchMark /><div><h2 className="font-medium">Shopping Assistant</h2><p className="text-xs text-stone-500">A thoughtful edit, shaped around you</p></div></div></div>
     <div ref={transcriptRef} onScroll={(event) => { const el = event.currentTarget; shouldFollowRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 72; }} className="min-h-[170px] flex-1 space-y-5 overflow-y-auto px-4 py-5" aria-live="polite">
       {!view.messages.length && <div className="rounded-xl bg-[#f7f5f1] p-4"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500">VastraAI</p><p className="mt-2 text-sm leading-6 text-stone-700">Tell me what you’re looking for. We can refine color, occasion, size and budget together.</p><div className="mt-3 flex flex-wrap gap-2">{["A wedding guest dress", "Something in blue", "Everyday essentials"].map((suggestion) => <button key={suggestion} onClick={() => setDraft(suggestion)} className="rounded-full border border-stone-300 bg-white px-3 py-1.5 text-[11px] text-stone-600 hover:border-stone-500">{suggestion}</button>)}</div></div>}
-      {view.messages.map((message) => <div key={message.id} className={message.role === "user" ? "ml-6" : "mr-4"}><p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.17em] text-stone-500">{message.role === "user" ? "You" : "VastraAI"}</p><div className={`rounded-2xl px-4 py-3 text-sm leading-6 ${message.role === "user" ? "rounded-tr-md bg-stone-900 text-white" : "rounded-tl-md bg-[#f5f3ef] text-stone-700"}`}>{message.content}</div></div>)}
+      {view.messages.map((message) => <div key={message.id} className={message.role === "user" ? "ml-6" : "mr-4"}><p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.17em] text-stone-500">{message.role === "user" ? "You" : "VastraAI"}</p><div className={`rounded-2xl px-4 py-3 text-sm leading-6 ${message.role === "user" ? "rounded-tr-md bg-stone-900 text-white" : "rounded-tl-md bg-[#f5f3ef] text-stone-700"}`}>{message.content}</div>{message.productIds?.length ? <div className="mt-2 flex flex-wrap gap-1.5">{message.productIds.map((id) => { const product = data?.results.find((item) => item.product_id === id); return product ? <Link key={id} href={product.product_url} className="rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[10px] text-stone-600 underline-offset-2 hover:underline">{product.title}</Link> : null; })}</div> : null}</div>)}
       {busy && <div className="mr-8 rounded-2xl rounded-tl-md bg-[#f5f3ef] px-4 py-3 text-xs text-stone-500"><span className="mr-2 inline-flex gap-1" aria-hidden="true"><i className="size-1.5 animate-pulse rounded-full bg-stone-500" /><i className="size-1.5 animate-pulse rounded-full bg-stone-400 [animation-delay:120ms]" /><i className="size-1.5 animate-pulse rounded-full bg-stone-300 [animation-delay:240ms]" /></span>Updating your selection</div>}
       {view.error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800">{view.error} Your current selection is unchanged.</p>}
       {data && <p className="text-center text-[10px] text-stone-400">Your preferences are saved in this search</p>}
     </div>
     <form onSubmit={onSubmit} className="border-t border-stone-100 p-3">
       <label htmlFor={compact ? "mobile-refinement" : "desktop-refinement"} className="sr-only">Message VastraAI</label>
-      <div className="rounded-2xl border border-stone-300 bg-white p-2 focus-within:border-stone-500 focus-within:ring-2 focus-within:ring-stone-100"><textarea id={compact ? "mobile-refinement" : "desktop-refinement"} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); onSubmit(event); } }} placeholder="Make it blue, size M…" rows={2} className="w-full resize-none bg-transparent px-2 py-1 text-sm outline-none placeholder:text-stone-400"/><div className="flex items-center justify-between px-1"><span className="text-[10px] text-stone-400">Enter to send · Shift + Enter for a new line</span><button disabled={busy} className="rounded-full bg-stone-900 px-4 py-2 text-xs font-medium text-white transition hover:bg-stone-700 disabled:opacity-40">Send</button></div></div>
+      <div className="rounded-2xl border border-stone-300 bg-white p-2 focus-within:border-stone-500 focus-within:ring-2 focus-within:ring-stone-100"><textarea id={compact ? "mobile-refinement" : "desktop-refinement"} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); onSubmit(event); } }} placeholder="Make it blue, size M…" rows={2} className="w-full resize-none bg-transparent px-2 py-1 text-sm outline-none placeholder:text-stone-400"/><div className="flex items-center justify-between px-1"><span className="text-[10px] text-stone-400">Enter to send · Shift + Enter for a new line</span><button disabled={busy || !draft.trim()} className="rounded-full bg-stone-900 px-4 py-2 text-xs font-medium text-white transition hover:bg-stone-700 disabled:opacity-40">Send</button></div></div>
     </form>
   </section>;
 }

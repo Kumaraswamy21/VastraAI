@@ -28,10 +28,14 @@ python -m fashion_search.evaluation.compare evaluation/results/baseline.json eva
 
 The runner writes JSON details and a sibling Markdown summary. Keep a baseline only when it is an actual run; do not commit example/placeholder scores. Comparison rejects different dataset, catalog snapshot, checksum, or provider mode by default. `--allow-version-mismatch` is an explicit escape hatch; version-mixed deltas should not be interpreted as regressions/improvements. Direction is shown per metric because latency and violation rate are lower-is-better. Threshold configuration is intentionally not a CI failure gate in this initial milestone.
 
+### Retrieval and RAG comparison modes
+
+Run `--provider-mode semantic`, `hybrid`, or `hybrid_rag` against the same pinned dataset and catalog. Semantic mode uses only a ready, compatible embedding index. Hybrid modes use the existing hybrid retrieval and fall back to FTS if that index is unavailable. These modes can call the configured embedding provider when the index is ready. `hybrid_rag` adds deterministic adversarial context/grounding validation; it deliberately does not call a live text generator, so it measures retrieval parity and safeguard behavior rather than generated-answer quality or provider cost. Compare matching runs with `compare --compare-modes`. Live generation latency, tokens, and estimated cost are recorded by request observability when the application serves eligible product-context questions.
+
 ## Adding cases
 
 Add query cases with stable IDs, query classes, manually labeled expected filters, product-ID relevance grades, judgment completeness, and catalog-grounded empty expectation. Add conversational turns with the full expected state after each message. Before changing production search, inspect per-query mismatches and verify the human labels against the pinned catalog. When catalog data changes, create and record a new catalog snapshot/checksum; do not silently update the v1 catalog identifier.
 
 ## Limitations
 
-The initial runnable baseline is PostgreSQL FTS only. It does not measure semantic retrieval, RRF ordering, live provider latency, or model usage; those should be separate runs/modes built on the same dataset and never mixed in comparison. Several cases intentionally have incomplete relevance judgments, so only a smaller exhaustive subset contributes to ranked scores. The conversation evaluator is deterministic-only and unsupported provider-dependent turns are marked incorrect rather than called live. Dashboard/observability history is not used as a substitute for controlled evaluation runs.
+Several cases intentionally have incomplete relevance judgments, so only a smaller exhaustive subset contributes to ranked scores. The conversation evaluator is deterministic-only and unsupported provider-dependent turns are marked incorrect rather than called live. Dashboard/observability history is not used as a substitute for controlled evaluation runs. Grounding metrics from the adversarial suite distinguish invalid/unsupported proposals from unsafe output emitted after validation; they do not replace a reviewed answer-quality test set.

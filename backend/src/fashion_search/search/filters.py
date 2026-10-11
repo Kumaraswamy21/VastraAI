@@ -8,6 +8,7 @@ from sqlalchemy import Select
 
 from fashion_search.catalog.models import Product
 from fashion_search.config.settings import Settings, get_settings
+from fashion_search.search.constraints import color_filter_values
 from fashion_search.search.schemas import FashionSearchConstraints
 
 Stmt = TypeVar("Stmt", bound=Select)
@@ -30,7 +31,7 @@ def apply_search_constraints(stmt: Stmt, constraints: FashionSearchConstraints) 
     if constraints.category is not None:
         stmt = stmt.where(Product.category == constraints.category)
     if constraints.color is not None:
-        stmt = stmt.where(Product.color == constraints.color)
+        stmt = stmt.where(Product.color.in_(color_filter_values(constraints.color)))
     if constraints.occasion is not None:
         stmt = stmt.where(Product.occasion == constraints.occasion)
     if constraints.gender is not None:

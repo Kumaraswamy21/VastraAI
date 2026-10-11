@@ -151,6 +151,9 @@ class TelemetryRepository:
             "keyword_search_ms",
             "fusion_ms",
             "explanation_ms",
+            "retrieval_latency_ms",
+            "rag_generation_latency_ms",
+            "total_rag_latency_ms",
         ]
         expressions = []
         for stage in stages:

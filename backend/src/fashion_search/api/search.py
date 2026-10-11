@@ -19,6 +19,7 @@ from fashion_search.search.conversation import (
     SearchStateReducer,
     StateTransitionError,
     active_filters,
+    deterministic_refinement,
     initial_search_state,
 )
 
@@ -38,6 +39,7 @@ from fashion_search.search.constraints import parse_constraints
 from fashion_search.search.hybrid import HybridSearchError, hybrid_search
 from fashion_search.search.sessions import search_session_store
 from fashion_search.search.semantic import SemanticSearchError, semantic_search
+from fashion_search.rag.service import generate_grounded_answer, needs_grounded_answer
 
 router = APIRouter(prefix="/search", tags=["search"])
 logger = get_logger(__name__)
@@ -74,10 +76,18 @@ def _record_search(
         keyword_search_ms=metrics.get("keyword_ms"),
         fusion_ms=metrics.get("fusion_ms"),
         explanation_ms=metrics.get("explanation_ms"),
+        retrieval_latency_ms=metrics.get("retrieval_latency_ms"),
+        rag_generation_latency_ms=metrics.get("rag_generation_latency_ms"),
+        total_rag_latency_ms=metrics.get("total_rag_latency_ms"),
+        retrieved_context_count=metrics.get("retrieved_context_count"),
+        context_size_chars=metrics.get("context_size_chars"),
+        generation_provider=metrics.get("generation_provider"),
+        generation_model=metrics.get("generation_model"),
+        grounding_failure=bool(metrics.get("grounding_failure", False)),
+        invalid_product_reference=bool(metrics.get("invalid_product_reference", False)),
         semantic_candidate_count=metrics.get("semantic_candidates"),
         keyword_candidate_count=metrics.get("keyword_candidates"),
         final_result_count=result.total if result else None,
-        generation_provider=getattr(cfg, "generation_provider", None),
         embedding_provider=getattr(cfg, "embedding_provider", None),
         fallback_used=fallback,
         semantic_search_available=result.semantic_search_available if result else False,
@@ -145,11 +155,18 @@ def search_catalog(body: SearchRequest) -> ConversationalSearchResponse:
             if current is None:
                 raise HTTPException(status_code=404, detail="search session not found")
             message = body.message or "Updated filters"
-            refinement = (
-                SearchRefinement(updates=body.updates or [])
-                if body.updates is not None
-                else FollowUpInterpreter(GenerationRouter()).interpret(message, current)
-            )
+            if body.updates is not None:
+                refinement = SearchRefinement(updates=body.updates)
+            else:
+                refinement = deterministic_refinement(message, current)
+                if refinement is None and needs_grounded_answer(message):
+                    # Product-context questions leave constraints untouched and
+                    # go to grounded generation after the same retrieval reruns.
+                    refinement = SearchRefinement()
+                elif refinement is None:
+                    refinement = FollowUpInterpreter(GenerationRouter()).interpret(
+                        message, current
+                    )
             state = SearchStateReducer().apply(
                 current,
                 refinement,
@@ -157,9 +174,6 @@ def search_catalog(body: SearchRequest) -> ConversationalSearchResponse:
                 expected_revision=body.expected_revision
                 if body.expected_revision is not None
                 else -1,
-            )
-            search_session_store.commit(
-                session_id, state, expected_revision=current.revision
             )
             interpreted_as = "new_search" if refinement.reset_search else "refinement"
 
@@ -172,6 +186,42 @@ def search_catalog(body: SearchRequest) -> ConversationalSearchResponse:
             resolved_query=semantic_query,
             sort_preference=state.sort_preference,
         )
+        cfg = get_settings()
+        if (
+            getattr(cfg, "rag_enabled", True)
+            and result.search_status == "success"
+            and result.results
+            and needs_grounded_answer(message)
+        ):
+            rag_result = generate_grounded_answer(
+                message, state.constraints, result.results, settings=cfg
+            )
+            result.answer = rag_result.answer
+            result.referenced_product_ids = rag_result.referenced_product_ids
+            result.metrics.update(
+                {
+                    "rag_generation_latency_ms": round(
+                        rag_result.generation_latency_ms, 1
+                    ),
+                    "total_rag_latency_ms": round(
+                        float(result.metrics.get("retrieval_latency_ms", 0.0))
+                        + rag_result.total_latency_ms,
+                        1,
+                    ),
+                    "retrieved_context_count": rag_result.context_count,
+                    "context_size_chars": rag_result.context_size_chars,
+                    "generation_provider": rag_result.generation_provider,
+                    "generation_model": rag_result.generation_model,
+                    "grounding_failure": rag_result.grounding_failure,
+                    "invalid_product_reference": rag_result.invalid_product_reference,
+                }
+            )
+        if body.session_id and session_id:
+            # Only commit after retrieval has completed so a failed refinement
+            # cannot advance the authoritative revision without new results.
+            search_session_store.commit(
+                session_id, state, expected_revision=state.revision - 1
+            )
         result_payload = (
             result.model_dump() if hasattr(result, "model_dump") else vars(result)
         )

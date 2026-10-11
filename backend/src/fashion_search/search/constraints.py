@@ -36,6 +36,14 @@ _SIZE_PATTERN = "|".join(
 GENDERS = frozenset(gender for profile in PROFILES for gender in profile.genders)
 
 CATEGORY_ALIASES = {
+    "shoe": "footwear",
+    "shoes": "footwear",
+    "sandal": "footwear",
+    "sandals": "footwear",
+    "heel": "footwear",
+    "heels": "footwear",
+    "boot": "footwear",
+    "boots": "footwear",
     "tee": "t-shirt",
     "tees": "t-shirt",
     "t shirt": "t-shirt",
@@ -55,6 +63,11 @@ CATEGORY_ALIASES = {
     "dresses": "dress",
 }
 COLOR_ALIASES = {"navy": "navy blue", "grey": "gray"}
+COLOR_FAMILIES = {
+    "blue": frozenset({"blue", "navy blue", "powder blue"}),
+    "green": frozenset({"green", "emerald green", "olive"}),
+    "purple": frozenset({"purple", "lavender"}),
+}
 GENDER_ALIASES = {
     "male": "men",
     "man": "men",
@@ -134,6 +147,21 @@ def normalize_constraints(
         price_min_inclusive=value.price_min_inclusive,
         price_max_inclusive=value.price_max_inclusive,
     )
+
+
+def color_matches(actual: str | None, expected: str | None) -> bool:
+    """Match a broad color request to catalog shades while keeping named shades exact."""
+    if actual is None or expected is None:
+        return False
+    actual_value = actual.casefold()
+    expected_value = expected.casefold()
+    return actual_value in COLOR_FAMILIES.get(expected_value, {expected_value})
+
+
+def color_filter_values(expected: str) -> frozenset[str]:
+    """Catalog values allowed by an exact color family constraint."""
+    normalized = expected.casefold()
+    return COLOR_FAMILIES.get(normalized, frozenset({normalized}))
 
 
 _AMOUNT = r"(?P<{name}>-?\d[\d,]*(?:\.\d+)?)\s*(?P<{name}_k>k)?"

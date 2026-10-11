@@ -44,3 +44,4 @@ data/raw/
 *.dump
 backend/evaluation/results/current.json
 backend/evaluation/results/current.md
+VASTRAAI_V0_2_TO_V0_3_PRIVATE.md

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Protocol
 
+from fashion_search.search.constraints import color_matches
 from fashion_search.search.ranking import RankedCandidate
 from fashion_search.search.schemas import FashionSearchConstraints
 
@@ -36,7 +37,7 @@ def matches_category(
 def matches_color(
     product: ProductMetadata, constraints: FashionSearchConstraints
 ) -> bool:
-    return _same(product.color, constraints.color)
+    return color_matches(product.color, constraints.color)
 
 
 def matches_occasion(
@@ -166,11 +167,11 @@ class MatchExplanationBuilder:
         matched = set(matched_constraints(product, constraints))
         attributes: list[str] = []
         if "color" in matched and "category" in matched:
-            attributes.append(f"{constraints.color} {constraints.category}")
+            attributes.append(f"{product.color} {constraints.category}")
         elif "category" in matched:
             attributes.append(str(constraints.category))
         elif "color" in matched:
-            attributes.append(str(constraints.color))
+            attributes.append(str(product.color))
         if "occasion" in matched:
             attributes.append(f"{constraints.occasion}-wear")
         if "size" in matched:

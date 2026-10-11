@@ -23,6 +23,9 @@ from fashion_search.search.schemas import (
     ConstraintUpdate,
     FashionSearchConstraints,
     HybridSearchResponse,
+    HybridSearchResult,
+    HybridSearchScores,
+    RankingEvidence,
     SearchRefinement,
     SearchState,
 )
@@ -263,6 +266,90 @@ class SearchApiTests(unittest.TestCase):
                 },
             )
         self.assertEqual(response.status_code, 409)
+
+    def test_context_question_uses_grounded_path_without_refinement_generation(
+        self,
+    ) -> None:
+        from fashion_search.rag.service import RagAnswerResult
+
+        initial = state(revision=0)
+        hit = HybridSearchResult(
+            product_id=91,
+            title="Linen Wedding Dress",
+            category="dress",
+            color="black",
+            material="linen blend",
+            style="flowy",
+            gender="women",
+            occasion="wedding",
+            description="Linen blend fabric.",
+            sizes=["M"],
+            price_inr=3500,
+            currency="INR",
+            image_reference="catalog/dress.webp",
+            product_url="/products/linen-wedding-dress",
+            scores=HybridSearchScores(hybrid_score=0.02),
+            match_quality="good",
+            match_reason="Matches the confirmed filters.",
+            ranking=RankingEvidence(
+                hybrid_score=0.02,
+                final_rank=1,
+                ranking_sources=["keyword"],
+                matched_constraints=["category", "color", "occasion", "price"],
+            ),
+        )
+        found = HybridSearchResponse(
+            query="Which options are better for summer?",
+            retrieval_query="black dress wedding",
+            filters={},
+            total=1,
+            results=[hit],
+            search_status="success",
+        )
+        rag = RagAnswerResult(
+            answer="The catalog lists linen blend for Linen Wedding Dress.",
+            referenced_product_ids=[91],
+            generation_latency_ms=12.0,
+            total_latency_ms=12.5,
+            context_count=1,
+            context_size_chars=210,
+            generation_provider="fake",
+            generation_model="fake-model",
+        )
+        with (
+            patch(
+                "fashion_search.api.search.initial_search_state", return_value=initial
+            ),
+            patch(
+                "fashion_search.api.search.hybrid_search",
+                side_effect=[self.empty_result(), found],
+            ),
+            patch(
+                "fashion_search.api.search.generate_grounded_answer", return_value=rag
+            ) as generate,
+            patch(
+                "fashion_search.api.search.FollowUpInterpreter.interpret",
+                side_effect=AssertionError(
+                    "context question should not invoke refinement generation"
+                ),
+            ),
+        ):
+            first = self.client.post("/search", json={"query": initial.original_query})
+            response = self.client.post(
+                "/search",
+                json={
+                    "session_id": first.json()["session_id"],
+                    "expected_revision": 0,
+                    "message": "Which options are better for summer?",
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["revision"], 1)
+        self.assertEqual(body["state"]["constraints"]["color"], "black")
+        self.assertEqual(body["answer"], rag.answer)
+        self.assertEqual(body["referenced_product_ids"], [91])
+        generate.assert_called_once()
 
 
 if __name__ == "__main__":

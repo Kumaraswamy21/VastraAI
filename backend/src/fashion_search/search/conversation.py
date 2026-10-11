@@ -284,7 +284,11 @@ class SearchStateReducer:
         )
         if refinement.semantic_refinement:
             term = refinement.semantic_refinement.strip()
-            if term and term.casefold() not in {item.casefold() for item in modifiers}:
+            if (
+                term
+                and term.casefold() != semantic_query.casefold()
+                and term.casefold() not in {item.casefold() for item in modifiers}
+            ):
                 modifiers.append(term)
         return SearchState(
             original_query=message.strip()
