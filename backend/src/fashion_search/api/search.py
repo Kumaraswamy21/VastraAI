@@ -2,9 +2,10 @@
 
 import hashlib
 import time
+from decimal import ROUND_CEILING, ROUND_FLOOR
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from fashion_search.generation.router import GenerationRouter
@@ -35,11 +36,27 @@ from fashion_search.search.schemas import (
     SemanticSearchRequest,
     SemanticSearchResponse,
 )
-from fashion_search.search.constraints import parse_constraints
+from fashion_search.search.constraints import (
+    PriceFacts,
+    parse_constraints,
+    parse_price_facts,
+)
 from fashion_search.search.hybrid import HybridSearchError, hybrid_search
 from fashion_search.search.sessions import search_session_store
 from fashion_search.search.semantic import SemanticSearchError, semantic_search
 from fashion_search.rag.service import generate_grounded_answer, needs_grounded_answer
+from fashion_search.shopify.mcp_client import (
+    ShopifyMcpClient,
+    ShopifyMcpError,
+    ShopifyMcpProtocolError,
+    ShopifyMcpRateLimitError,
+    ShopifyMcpTimeoutError,
+)
+from fashion_search.shopify.schemas import (
+    ShopifyProductResult,
+    ShopifySearchResponse,
+    map_shopify_products,
+)
 
 router = APIRouter(prefix="/search", tags=["search"])
 logger = get_logger(__name__)
@@ -135,9 +152,82 @@ class ConversationalSearchResponse(HybridSearchResponse):
     active_filters: list[ActiveFilter]
 
 
-@router.post("", response_model=ConversationalSearchResponse)
-def search_catalog(body: SearchRequest) -> ConversationalSearchResponse:
+@router.post("", response_model=ConversationalSearchResponse | ShopifySearchResponse)
+def search_catalog(
+    body: SearchRequest,
+    provider: Literal["local", "shopify"] = Query(default="local"),
+) -> ConversationalSearchResponse | ShopifySearchResponse:
     """Create or refine structured state, then execute the existing hybrid search."""
+    if provider == "shopify":
+        if body.session_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Shopify provider does not support search-session refinements",
+            )
+        query = body.query or body.message or ""
+        settings = get_settings()
+        if not settings.shopify_catalog_enabled:
+            raise HTTPException(
+                status_code=503, detail="Shopify catalog search is not enabled"
+            )
+        currency = settings.market_currency.upper()
+        price_facts = parse_price_facts(query)
+        filters: dict[str, object] = {
+            "available": True,
+            "ships_to": {"country": settings.shopify_catalog_country.upper()},
+        }
+        if currency == "INR" and price_facts.detected and not price_facts.invalid:
+            price_filter: dict[str, int] = {}
+            if price_facts.minimum is not None:
+                price_filter["min"] = int(
+                    (price_facts.minimum * 100).to_integral_value(
+                        rounding=ROUND_CEILING
+                    )
+                )
+            if price_facts.maximum is not None:
+                price_filter["max"] = int(
+                    (price_facts.maximum * 100).to_integral_value(rounding=ROUND_FLOOR)
+                )
+            if price_filter:
+                filters["price"] = price_filter
+        try:
+            with ShopifyMcpClient(settings) as shopify_client:
+                content = shopify_client.search_catalog(
+                    query,
+                    limit=body.limit,
+                    currency=currency,
+                    filters=filters,
+                )
+        except ShopifyMcpRateLimitError as exc:
+            headers = {"Retry-After": exc.retry_after} if exc.retry_after else None
+            raise HTTPException(
+                status_code=429, detail=str(exc), headers=headers
+            ) from exc
+        except ShopifyMcpTimeoutError as exc:
+            raise HTTPException(status_code=504, detail=str(exc)) from exc
+        except ShopifyMcpProtocolError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+        except ShopifyMcpError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+        products = [
+            product
+            for product in map_shopify_products(content.get("products"))
+            if product.available is not False
+            and _shopify_product_matches_price(product, price_facts, currency)
+        ]
+        pagination = content.get("pagination")
+        return ShopifySearchResponse(
+            query=query,
+            total=len(products),
+            results=products,
+            has_next_page=(
+                bool(pagination.get("has_next_page", False))
+                if isinstance(pagination, dict)
+                else False
+            ),
+        )
+
     started = time.perf_counter()
     identifier = request_id()
     search_request_id_var.set(identifier)
@@ -288,6 +378,35 @@ def search_hybrid(body: HybridSearchRequest) -> HybridSearchResponse:
             error_type="SEARCH_ERROR",
         )
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+
+def _shopify_product_matches_price(
+    product: ShopifyProductResult, price_facts: PriceFacts, currency: str
+) -> bool:
+    """Enforce explicit INR bounds if catalog search returns broader results."""
+    if not price_facts.detected or price_facts.invalid:
+        return True
+    if currency != "INR":
+        return True
+    if product.currency != currency:
+        return False
+    if price_facts.maximum is not None:
+        if product.price_min is None or product.price_min > price_facts.maximum:
+            return False
+        if (
+            product.price_min == price_facts.maximum
+            and price_facts.maximum_inclusive is False
+        ):
+            return False
+    if price_facts.minimum is not None:
+        if product.price_max is None or product.price_max < price_facts.minimum:
+            return False
+        if (
+            product.price_max == price_facts.minimum
+            and price_facts.minimum_inclusive is False
+        ):
+            return False
+    return True
 
 
 @router.post("/semantic", response_model=SemanticSearchResponse)

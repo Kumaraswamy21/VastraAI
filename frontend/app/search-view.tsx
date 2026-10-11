@@ -5,12 +5,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ApiError,
   fetchConversationalSearch,
+  fetchShopifySearch,
   type ConstraintField,
   type ConversationalSearchResponse,
   type HybridSearchResult,
+  type ShopifySearchResponse,
 } from "@/lib/api";
 import { formatInr, swatchForColor } from "@/lib/color-swatch";
 import { restoreSnapshot, saveSnapshot, type ConversationMessage } from "@/lib/search-session";
+import { ShopifyProductsGrid } from "@/app/shopify-search-panel";
 
 type ViewState = {
   status: "idle" | "loading" | "error" | "ready";
@@ -59,6 +62,8 @@ function filterSummary(data: ConversationalSearchResponse): string {
 export function SearchView() {
   const [draft, setDraft] = useState("");
   const [view, setView] = useState<ViewState>(initialState);
+  const [provider, setProvider] = useState<"local" | "shopify">("local");
+  const [shopifyResult, setShopifyResult] = useState<ShopifySearchResponse | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [conversationOpen, setConversationOpen] = useState(false);
   const [colorChoicesOpen, setColorChoicesOpen] = useState(false);
@@ -96,10 +101,16 @@ export function SearchView() {
       ...current,
       status: "loading",
       error: null,
-      messages: userMessage ? [...current.messages, userMessage] : current.messages,
+      messages: provider === "local" && userMessage ? [...current.messages, userMessage] : current.messages,
     }));
     setDraft("");
     try {
+      if (provider === "shopify") {
+        const result = await fetchShopifySearch(trimmed, 12);
+        setShopifyResult(result);
+        setView((previous) => ({ ...previous, status: "ready", error: null }));
+        return;
+      }
       const current = view.data;
       const data = await fetchConversationalSearch(current
         ? {
@@ -124,7 +135,7 @@ export function SearchView() {
     } finally {
       inFlightRef.current = false;
     }
-  }, [view.data]);
+  }, [view.data, provider]);
 
   function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
@@ -139,6 +150,7 @@ export function SearchView() {
     setDraft("");
     setColorChoicesOpen(false);
     setView(initialState);
+    setShopifyResult(null);
   }
 
   const data = view.data;
@@ -156,13 +168,27 @@ export function SearchView() {
             <SearchMark /><span className="font-serif text-xl tracking-tight">VastraAI</span>
           </Link>
           <form onSubmit={onSubmit} className="ml-auto flex min-w-0 max-w-3xl flex-1 items-center rounded-full border border-stone-300 bg-white px-4 shadow-sm focus-within:border-stone-500 focus-within:ring-2 focus-within:ring-stone-200">
+            <label htmlFor="search-provider" className="sr-only">Search provider</label>
+            <select
+              id="search-provider"
+              value={provider}
+              onChange={(event) => {
+                setProvider(event.target.value as "local" | "shopify");
+                setView((current) => ({ ...current, error: null }));
+              }}
+              disabled={busy}
+              className="mr-2 max-w-24 bg-transparent text-xs text-stone-600 outline-none"
+            >
+              <option value="local">VastraAI</option>
+              <option value="shopify">Shopify</option>
+            </select>
             <span aria-hidden="true" className="mr-3 text-stone-400">⌕</span>
             <input
               aria-label="Search products, styles or occasions"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); onSubmit(event); } }}
-              placeholder="Search products, styles or occasions…"
+              placeholder={provider === "shopify" ? "Search Shopify products…" : "Search products, styles or occasions…"}
               className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-stone-400"
             />
             <button type="submit" disabled={busy || !draft.trim()} className="ml-2 rounded-full bg-stone-900 px-4 py-2 text-xs font-medium text-white transition hover:bg-stone-700 disabled:opacity-40">Search</button>
@@ -172,7 +198,17 @@ export function SearchView() {
       </header>
 
       <main className="mx-auto max-w-[1440px] px-4 pb-16 pt-5 sm:px-7 sm:pt-8">
-        {!data ? (
+        {provider === "shopify" ? (
+          <section className="min-h-[55vh]" aria-busy={busy}>
+            <div className="mb-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Independent catalog</p>
+              <h1 className="mt-2 font-serif text-3xl capitalize tracking-tight sm:text-4xl">{shopifyResult?.query ?? "Shopify products"}</h1>
+              {busy && <p role="status" className="mt-2 text-sm text-stone-500">Searching Shopify products…</p>}
+            </div>
+            {view.error && <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{view.error}</p>}
+            {shopifyResult && <ShopifyProductsGrid result={shopifyResult} />}
+          </section>
+        ) : !data ? (
           <section className="mx-auto max-w-4xl py-14 text-center sm:py-24">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">A considered way to shop</p>
             <h1 className="mx-auto mt-5 max-w-2xl font-serif text-4xl leading-tight tracking-tight sm:text-6xl">Find the pieces that feel like you.</h1>
@@ -236,7 +272,7 @@ export function SearchView() {
         )}
       </main>
 
-      {conversationOpen && data && <div className="fixed inset-0 z-50 flex items-end bg-stone-950/35 lg:hidden" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setConversationOpen(false); }}><section role="dialog" aria-modal="true" aria-label="VastraAI shopping conversation" className="max-h-[90dvh] w-full overflow-hidden rounded-t-[1.5rem] bg-[#fbfaf8] p-4 shadow-2xl"><div className="mx-auto mb-3 h-1 w-10 rounded-full bg-stone-300" /><div className="mb-3 flex items-center justify-between"><p className="font-serif text-xl">Shopping with VastraAI</p><button onClick={() => setConversationOpen(false)} aria-label="Close conversation" className="grid size-9 place-items-center rounded-full border border-stone-200">×</button></div><ConversationPanel view={view} draft={draft} setDraft={setDraft} onSubmit={onSubmit} transcriptRef={transcriptRef} shouldFollowRef={shouldFollowRef} busy={busy} compact /></section></div>}
+      {conversationOpen && provider === "local" && data && <div className="fixed inset-0 z-50 flex items-end bg-stone-950/35 lg:hidden" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setConversationOpen(false); }}><section role="dialog" aria-modal="true" aria-label="VastraAI shopping conversation" className="max-h-[90dvh] w-full overflow-hidden rounded-t-[1.5rem] bg-[#fbfaf8] p-4 shadow-2xl"><div className="mx-auto mb-3 h-1 w-10 rounded-full bg-stone-300" /><div className="mb-3 flex items-center justify-between"><p className="font-serif text-xl">Shopping with VastraAI</p><button onClick={() => setConversationOpen(false)} aria-label="Close conversation" className="grid size-9 place-items-center rounded-full border border-stone-200">×</button></div><ConversationPanel view={view} draft={draft} setDraft={setDraft} onSubmit={onSubmit} transcriptRef={transcriptRef} shouldFollowRef={shouldFollowRef} busy={busy} compact /></section></div>}
     </div>
   );
 }

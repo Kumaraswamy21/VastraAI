@@ -54,6 +54,14 @@ class Settings(BaseSettings):
     search_min_keyword_signal: float = Field(default=0.01, ge=0)
     search_diagnostics_enabled: bool = True
     market_currency: str = Field(default="INR", pattern=r"^[A-Za-z]{3}$")
+    shopify_catalog_enabled: bool = False
+    shopify_mcp_url: str = "https://catalog.shopify.com/api/ucp/mcp"
+    shopify_token_url: str = "https://api.shopify.com/auth/access_token"
+    shopify_client_id: str = ""
+    shopify_client_secret: str = ""
+    shopify_agent_profile_url: str = ""
+    shopify_catalog_country: str = Field(default="IN", pattern=r"^[A-Za-z]{2}$")
+    shopify_mcp_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
     cors_origins: str = "http://localhost:3000"
     log_level: str = "INFO"
     app_environment: str = Field(

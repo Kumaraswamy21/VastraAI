@@ -9,6 +9,7 @@ from fashion_search.api.health import router as health_router
 from fashion_search.api.products import router as products_router
 from fashion_search.api.observability import router as observability_router
 from fashion_search.api.search import router as search_router
+from fashion_search.api.shopify import router as shopify_router
 from fashion_search.config.settings import get_settings
 from fashion_search.core.logging import configure_logging
 from fashion_search.observability.context import request_id_var
@@ -45,6 +46,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(products_router)
     app.include_router(search_router)
+    app.include_router(shopify_router)
     app.include_router(chat_router)
     app.include_router(observability_router)
     return app

@@ -125,6 +125,29 @@ export type ConversationalSearchResponse = HybridSearchResponse & {
   active_filters: ActiveFilter[];
 };
 
+export type ShopifyProductResult = {
+  product_id: string;
+  title: string;
+  description?: string | null;
+  product_url?: string | null;
+  image_url?: string | null;
+  image_alt?: string | null;
+  price_min?: number | string | null;
+  price_max?: number | string | null;
+  currency?: string | null;
+  merchant_name?: string | null;
+  merchant_domain?: string | null;
+  merchant_url?: string | null;
+  available?: boolean | null;
+};
+
+export type ShopifySearchResponse = {
+  query: string;
+  total: number;
+  results: ShopifyProductResult[];
+  has_next_page: boolean;
+};
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -243,6 +266,21 @@ export async function fetchConversationalSearch(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      signal,
+    }),
+  );
+}
+
+export async function fetchShopifySearch(
+  query: string,
+  limit = 10,
+  signal?: AbortSignal,
+): Promise<ShopifySearchResponse> {
+  return readJson(
+    await fetch(`${apiBase()}/search?provider=shopify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, limit }),
       signal,
     }),
   );

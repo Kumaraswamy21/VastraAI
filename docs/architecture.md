@@ -30,6 +30,10 @@ The API's session store is **process-local memory**. The browser also keeps the 
 
 Search code uses `GenerationProvider` and `EmbeddingProvider`; Gemini and Ollama SDK details stay behind those interfaces. Provider wrappers record individual attempts, including fallback. Generation and embedding providers may differ. Query and product embeddings must use the **same provider, model, and dimensions**: Gemini+Gemini and Ollama+Ollama are valid; Gemini product vectors with an Ollama query vector are invalid. Re-embed the catalog after changing its embedding model/space. The query path checks stored vector compatibility and degrades to keyword search when necessary.
 
+## Shopify Global Catalog provider
+
+When enabled, `POST /search/shopify` calls Shopify Global Catalog MCP as a separate live provider. It uses a dedicated response model and frontend panel; Shopify IDs, currencies, seller URLs, and image URLs do not enter the local product schema, search fusion, RAG context, or PostgreSQL. The backend requires a configured UCP agent profile URL. Results are not cached, and product images are rendered from their returned live URLs next to the associated merchant listing. See the [deployment guide](deployment.md) for settings.
+
 ## Observability and evaluation
 
 Provider and search events share a request correlation ID. They record operational metadata, retrieval and RAG timings, context count/size, generation provider/model, grounding failures, results, and token usage when available, without storing prompts by default. Telemetry writes fail open. Developer API routes under `/dev/observability` are disabled when `APP_ENVIRONMENT=production`; the frontend dashboard at `/dev/observability` is for local development only, **not authenticated admin access**.
