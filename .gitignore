@@ -45,3 +45,9 @@ data/raw/
 backend/evaluation/results/current.json
 backend/evaluation/results/current.md
 VASTRAAI_V0_2_TO_V0_3_PRIVATE.md
+
+# Session deployment documents
+docs/V0.3_DEPLOYMENT_GUIDE.md
+docs/deployment.md
+docs/shopify-mcp-change-notes.md
+docs/V0.3_SESSION_EXPORT.md

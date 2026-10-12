@@ -6,7 +6,13 @@ VastraAI can search Shopify Global Catalog as a separate provider. The existing 
 
 The backend uses Shopify's MCP endpoint and `search_catalog` tool. It handles timeouts and MCP errors, applies the configured country, and maps product title, price, currency, image, merchant, availability, product URL, and variants when present.
 
-The search page now has a **Shopify** provider option. Choose it, enter a query, and submit to see the returned product cards and merchant links.
+The search page now opens with **Shopify** selected, so new VastraAI searches use live catalog results by default. The **VastraAI** provider remains available in the selector for local catalog search.
+
+The Shopify landing screen now has a custom fashion editorial graphic and quick search ideas. After a search, a shopping chat sits beside the live product grid on wide screens and below it on small screens. Chat product links point to current merchant listings.
+
+Shopify searches now support follow-up requests in the same temporary search session. Users can change filters in natural language, edit minimum and maximum prices, remove filter chips, and sort by price. Each update makes a fresh MCP request. Price controls filter listed offers; they do not change seller prices.
+
+Questions such as “Which one is best for summer?” can receive a grounded VastraAI answer. The answer uses only the current live result page, validates product references and claims, and includes links to referenced products. Shopify products and RAG context are not saved in PostgreSQL. Shopify retrieval is handled by Shopify's catalog search; local vector search does not run over Shopify items.
 
 ## Configuration
 
@@ -19,6 +25,7 @@ Shopify search is off by default. The backend configuration supports:
 - `SHOPIFY_AGENT_PROFILE_URL`
 - `SHOPIFY_CATALOG_COUNTRY`
 - `SHOPIFY_MCP_TIMEOUT_SECONDS`
+- `SHOPIFY_RAG_MODEL` (defaults to `gemini-3.5-flash-lite`)
 
 Keep credentials in the local environment file or deployment secret store. Do not put credentials in Git.
 
@@ -33,14 +40,15 @@ The app's health endpoint returned `status: ok`, with both backend and database 
 ## Files changed for Shopify
 
 - Backend: `backend/src/fashion_search/api/search.py`, `backend/src/fashion_search/api/shopify.py`, `backend/src/fashion_search/main.py`
+- Live Shopify RAG: `backend/src/fashion_search/rag/shopify.py`
 - Backend client and mapping: `backend/src/fashion_search/shopify/`
 - Settings and example configuration: `backend/src/fashion_search/config/settings.py`, `.env.example`
-- Frontend: `frontend/app/search-view.tsx`, `frontend/app/shopify-search-panel.tsx`, `frontend/lib/api.ts`
-- Focused tests: `backend/tests/test_search_provider_api.py`, `backend/tests/test_shopify_mapping.py`, `backend/tests/test_shopify_mcp.py`
+- Frontend: `frontend/app/search-view.tsx`, `frontend/app/shopify-search-panel.tsx`, `frontend/app/shopify-chat-panel.tsx`, `frontend/lib/api.ts`
+- Focused tests: `backend/tests/test_search_provider_api.py`, `backend/tests/test_shopify_rag.py`, `backend/tests/test_shopify_mapping.py`, `backend/tests/test_shopify_mcp.py`
 - Project docs: `README.md`, `docs/architecture.md`, `docs/deployment.md`
 
 ## Verification notes
 
-Focused Shopify tests and the live catalog request have been run. Frontend linting, type checking, and production build passed. The full backend suite had existing failures related to database DNS access and unrelated assertions; those are recorded in the validation report from the integration work.
+Focused Shopify API, MCP, mapping, RAG, local conversation, and local RAG tests pass. Frontend linting, type checking, and production build pass. Live Shopify search, price filtering, and a grounded RAG answer pass. Shopify uses its own Gemini model setting because the previous configured model returned 404; the local search model setting is unchanged.
 
-This note is not committed. No database schema changes or frontend redesign were made for Shopify search.
+This note is not committed. No database schema changes were made.

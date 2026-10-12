@@ -40,6 +40,7 @@ Keep one backend instance for now: conversational search sessions are held in pr
 | `SHOPIFY_TOKEN_URL` | OAuth token endpoint; defaults to Shopify's endpoint |
 | `SHOPIFY_CATALOG_COUNTRY` | ISO country code used for shipping availability and localization, such as `IN` |
 | `SHOPIFY_MCP_TIMEOUT_SECONDS` | Shopify request timeout; defaults to 10 seconds |
+| `SHOPIFY_RAG_MODEL` | Gemini model used for Shopify grounded answers; defaults to `gemini-3.5-flash-lite` |
 
 Only set the provider-specific values you use. If Neon has IP restrictions enabled, allow connections from the Render service's outbound IP addresses.
 
