@@ -83,6 +83,8 @@ export type HybridSearchResponse = {
   results: HybridSearchResult[];
   search_status: string;
   message?: string | null;
+  answer?: string | null;
+  referenced_product_ids: number[];
   suggestions: string[];
   search_mode: string;
   semantic_search_available: boolean;
@@ -226,7 +228,12 @@ export async function fetchConversationalSearch(
         session_id: string;
         expected_revision: number;
         message?: string;
-        updates?: { field: ConstraintField; operation: "REMOVE" }[];
+        updates?: {
+          field: ConstraintField;
+          operation: "SET" | "REMOVE" | "KEEP" | "RELAX";
+          value?: string | number;
+          inclusive?: boolean | null;
+        }[];
         limit?: number;
       },
   signal?: AbortSignal,

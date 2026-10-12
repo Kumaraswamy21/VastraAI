@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     hybrid_semantic_weight: float = Field(default=0.6, gt=0, le=1)
     hybrid_keyword_weight: float = Field(default=0.4, gt=0, le=1)
     hybrid_candidate_limit: int = Field(default=100, ge=10, le=500)
+    rag_enabled: bool = True
+    rag_context_top_k: int = Field(default=5, ge=1, le=12)
+    rag_description_max_chars: int = Field(default=360, ge=80, le=1200)
     search_strong_semantic_threshold: float = Field(default=0.75, ge=-1, le=1)
     search_weak_semantic_threshold: float = Field(default=0.35, ge=-1, le=1)
     search_min_keyword_signal: float = Field(default=0.01, ge=0)

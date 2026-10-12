@@ -6,8 +6,13 @@ import re
 
 from fashion_search.search.constraints import (
     CATEGORY_ALIASES,
+    CATEGORIES,
+    COLOR_ALIASES,
+    COLORS_SUPPORTED,
     GENDER_ALIASES,
     OCCASION_ALIASES,
+    OCCASIONS,
+    SIZES,
     parse_price_facts,
 )
 from fashion_search.search.schemas import FashionSearchConstraints
@@ -68,54 +73,30 @@ def build_retrieval_query(
 
     result = cleaned
     price = parse_price_facts(cleaned)
-    if (
-        price.detected
-        and not price.invalid
-        and (constraints.price_min is not None or constraints.price_max is not None)
-    ):
+    if price.detected and not price.invalid:
         result = _PRICE_FRAGMENT.sub(" ", result)
         result = re.sub(r"\s+", " ", result).strip(" ,.")
 
-    if constraints.gender is not None:
-        result = _strip_phrases(result, _GENDER_PHRASES)
-        # Drop dangling connectors left by "shirt for men" -> "shirt for".
-        result = re.sub(
-            r"\b(?:for|at|on|during)\s*$",
-            "",
-            result,
-            flags=re.IGNORECASE,
-        ).strip(" ,.")
+    # SearchState keeps the original natural-language query across refinements.
+    # Remove every recognized hard-filter phrase before keyword retrieval so
+    # stale values (e.g. "black" after changing to blue) cannot veto new filters.
+    facet_phrases = (
+        set(CATEGORIES)
+        | set(CATEGORY_ALIASES)
+        | set(COLORS_SUPPORTED)
+        | set(COLOR_ALIASES)
+        | set(OCCASIONS)
+        | set(OCCASION_ALIASES)
+        | set(SIZES)
+        | set(_GENDER_PHRASES)
+    )
+    facet_phrases |= {f"size {size}" for size in SIZES}
+    result = _strip_phrases(result, facet_phrases)
 
-    if constraints.occasion is not None:
-        # Only strip aliases that map to the extracted occasion.
-        occasion_phrases = {constraints.occasion} | {
-            alias
-            for alias, canonical in OCCASION_ALIASES.items()
-            if canonical == constraints.occasion
-        }
-        result = _strip_phrases(result, occasion_phrases)
-        result = re.sub(
-            r"\b(?:for|at|on|during)\s*$",
-            "",
-            result,
-            flags=re.IGNORECASE,
-        ).strip(" ,.")
-
-    if constraints.size is not None:
-        size = constraints.size
-        size_phrases = {size, f"size {size}", f"size: {size}"}
-        if size == "Free Size":
-            size_phrases.add("free size")
-        result = _strip_phrases(result, size_phrases)
-
-    # The parser normalizes category aliases, but FTS needs the indexed category
-    # term. Otherwise "black tee" searches for "tee" although rows say t-shirt.
-    if constraints.category is not None:
-        for alias, canonical in sorted(
-            CATEGORY_ALIASES.items(), key=lambda item: -len(item[0])
-        ):
-            if canonical == constraints.category:
-                result = _phrase_pattern(alias).sub(canonical, result)
+    # Category and color are indexed in PostgreSQL FTS, so add only their
+    # currently authoritative values back after stale terms have been removed.
+    indexed_facets = [constraints.category, constraints.color]
+    result = " ".join([result, *(value for value in indexed_facets if value)]).strip()
 
     result = re.sub(
         r"\b(?:for|at|on|during)\s*$", "", result, flags=re.IGNORECASE

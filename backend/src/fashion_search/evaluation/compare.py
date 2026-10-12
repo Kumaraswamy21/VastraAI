@@ -25,6 +25,15 @@ METRICS = (
         "higher",
     ),
     ("P95 latency ms", "latency.total.p95_ms", "lower"),
+    ("Context relevance", "rag_quality_metrics.mean_context_relevance", "higher"),
+    (
+        "Product attribution accuracy",
+        "rag_quality_metrics.mean_product_attribution_accuracy",
+        "higher",
+    ),
+    ("Unsupported claim rate", "rag_quality_metrics.unsupported_claim_rate", "lower"),
+    ("Invalid reference rate", "rag_quality_metrics.invalid_reference_rate", "lower"),
+    ("Answer groundedness", "rag_quality_metrics.mean_answer_groundedness", "higher"),
 )
 
 
@@ -35,14 +44,20 @@ def _at(value: dict, dotted: str):
 
 
 def compare(
-    baseline: dict, current: dict, *, allow_version_mismatch: bool = False
+    baseline: dict,
+    current: dict,
+    *,
+    allow_version_mismatch: bool = False,
+    compare_modes: bool = False,
 ) -> list[dict]:
-    for key in (
+    keys = [
         "dataset_version",
         "catalog_snapshot_id",
         "catalog_snapshot_sha256",
-        "provider_mode",
-    ):
+    ]
+    if not compare_modes:
+        keys.append("provider_mode")
+    for key in keys:
         before = baseline.get("run_metadata", {}).get(key)
         after = current.get("run_metadata", {}).get(key)
         if before != after and not allow_version_mismatch:
@@ -69,11 +84,17 @@ def main() -> None:
     parser.add_argument("baseline", type=Path)
     parser.add_argument("current", type=Path)
     parser.add_argument("--allow-version-mismatch", action="store_true")
+    parser.add_argument(
+        "--compare-modes",
+        action="store_true",
+        help="Allow different retrieval modes when dataset and catalog match",
+    )
     args = parser.parse_args()
     rows = compare(
         json.loads(args.baseline.read_text()),
         json.loads(args.current.read_text()),
         allow_version_mismatch=args.allow_version_mismatch,
+        compare_modes=args.compare_modes,
     )
     print(f"{'Metric':28} {'Baseline':>12} {'Current':>12} {'Delta':>12}  Direction")
     for row in rows:

@@ -22,7 +22,7 @@ services:
     env_file:
       - .env
     environment:
-      CORS_ORIGINS: http://localhost:3000
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
       DATABASE_URL: postgresql://vastraai:vastraai_local@db:5432/vastraai?sslmode=disable
       OLLAMA_BASE_URL: http://host.docker.internal:11434
     depends_on:

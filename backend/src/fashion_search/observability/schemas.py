@@ -58,6 +58,14 @@ class SearchEventData(BaseModel):
     keyword_search_ms: float | None = None
     fusion_ms: float | None = None
     explanation_ms: float | None = None
+    retrieval_latency_ms: float | None = None
+    rag_generation_latency_ms: float | None = None
+    total_rag_latency_ms: float | None = None
+    retrieved_context_count: int | None = None
+    context_size_chars: int | None = None
+    generation_model: str | None = None
+    grounding_failure: bool = False
+    invalid_product_reference: bool = False
     semantic_candidate_count: int | None = None
     keyword_candidate_count: int | None = None
     final_result_count: int | None = None

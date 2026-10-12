@@ -45,10 +45,13 @@ from fashion_search.search.explanations import (
     all_hard_constraints_match,
     classify_match_quality,
 )
-from fashion_search.search.keyword import search_by_keyword
+from fashion_search.search.keyword import KeywordHit, search_by_keyword
 from fashion_search.search.preprocess import build_retrieval_query
-from fashion_search.search.ranking import RankedCandidate
+from fashion_search.search.ranking import RankedCandidate, reciprocal_rank_fusion
 from fashion_search.search.schemas import SearchState
+from fashion_search.search.vector import embedding_index_status, search_by_vector
+from fashion_search.ai.factory import get_embedding_provider
+from fashion_search.rag.evaluation import run_adversarial_grounding_suite
 
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DATASET = ROOT / "evaluation" / "datasets" / "fashion_search_v1.json"
@@ -117,12 +120,23 @@ def evaluate(
     query_id: str | None = None,
     provider_mode: str = "offline_keyword",
 ) -> dict:
-    if provider_mode != "offline_keyword":
-        raise ValueError(
-            "Only offline_keyword is implemented; it intentionally calls no model providers"
-        )
+    supported_modes = {"offline_keyword", "semantic", "hybrid", "hybrid_rag"}
+    if provider_mode not in supported_modes:
+        raise ValueError(f"provider_mode must be one of {sorted(supported_modes)}")
     dataset = EvaluationDataset.model_validate_json(dataset_path.read_text())
     cfg = get_settings()
+    embedder = (
+        get_embedding_provider(cfg) if provider_mode != "offline_keyword" else None
+    )
+    embedding_identity = None
+    semantic_ready = False
+    if embedder is not None:
+        embedding_identity = {
+            "provider": embedder.name,
+            "model": embedder.model_name,
+            "dimensions": embedder.dimensions,
+        }
+        semantic_ready = embedding_index_status(**embedding_identity) == "ready"
     with Session(get_engine(), expire_on_commit=False) as session:
         products = list(session.scalars(select(Product).order_by(Product.id)))
     actual_snapshot = catalog_checksum(products)
@@ -170,9 +184,57 @@ def evaluate(
         actual = fallback_parse(case.query, currency=cfg.market_currency)
         retrieval_query = build_retrieval_query(case.query, actual)
         parse_ms = (time.perf_counter() - parse_start) * 1000
-        search_start = time.perf_counter()
-        hits = search_by_keyword(retrieval_query, constraints=actual, limit=50)
-        keyword_ms = (time.perf_counter() - search_start) * 1000
+        keyword_ms = semantic_ms = embed_ms = fusion_ms = 0.0
+        keyword_hits = []
+        semantic_hits = []
+        if provider_mode in {"offline_keyword", "hybrid", "hybrid_rag"}:
+            search_start = time.perf_counter()
+            keyword_hits = search_by_keyword(
+                retrieval_query, constraints=actual, limit=50
+            )
+            keyword_ms = (time.perf_counter() - search_start) * 1000
+        if embedder is not None and semantic_ready:
+            try:
+                embed_start = time.perf_counter()
+                query_vector = embedder.embed_query(retrieval_query)
+                embed_ms = (time.perf_counter() - embed_start) * 1000
+                search_start = time.perf_counter()
+                semantic_hits = search_by_vector(
+                    query_vector,
+                    limit=50,
+                    constraints=actual,
+                    settings=cfg,
+                    provider=embedding_identity["provider"],
+                    model=embedding_identity["model"],
+                    dimensions=embedding_identity["dimensions"],
+                )
+                semantic_ms = (time.perf_counter() - search_start) * 1000
+            except Exception:
+                # Hybrid modes exercise the established FTS fallback on semantic failure.
+                semantic_hits = []
+        if provider_mode == "semantic":
+            hits = [
+                KeywordHit(hit.product, hit.similarity_score) for hit in semantic_hits
+            ]
+        elif provider_mode in {"hybrid", "hybrid_rag"}:
+            fusion_start = time.perf_counter()
+            fused = reciprocal_rank_fusion(
+                [(hit.product.id, hit.similarity_score) for hit in semantic_hits],
+                [(hit.product.id, hit.rank_score) for hit in keyword_hits],
+                rrf_k=cfg.hybrid_rrf_k,
+                semantic_weight=cfg.hybrid_semantic_weight,
+                keyword_weight=cfg.hybrid_keyword_weight,
+            )
+            product_by_id = {hit.product.id: hit.product for hit in semantic_hits}
+            product_by_id.update({hit.product.id: hit.product for hit in keyword_hits})
+            hits = [
+                KeywordHit(product_by_id[row.product_id], row.hybrid_score)
+                for row in fused[:50]
+                if row.product_id in product_by_id
+            ]
+            fusion_ms = (time.perf_counter() - fusion_start) * 1000
+        else:
+            hits = keyword_hits
         ranked_ids = [hit.product.id for hit in hits]
         products_found = [hit.product for hit in hits]
         filter_result = compare_filters(case.expected_filters, actual)
@@ -264,15 +326,25 @@ def evaluate(
                 "latency": {
                     "total_latency_ms": elapsed,
                     "constraint_parsing_ms": parse_ms,
-                    "query_embedding_ms": None,
-                    "semantic_search_ms": None,
+                    "query_embedding_ms": embed_ms if embedder is not None else None,
+                    "semantic_search_ms": semantic_ms if embedder is not None else None,
                     "keyword_search_ms": keyword_ms,
-                    "fusion_ms": 0.0,
+                    "fusion_ms": fusion_ms,
                     "explanation_ms": explanation_ms,
                 },
-                "search_mode": "KEYWORD_ONLY",
-                "provider_mode": "offline_keyword",
-                "provider_model": None,
+                "search_mode": (
+                    "SEMANTIC_ONLY"
+                    if provider_mode == "semantic"
+                    else "HYBRID"
+                    if provider_mode in {"hybrid", "hybrid_rag"} and semantic_hits
+                    else "KEYWORD_FALLBACK"
+                    if provider_mode in {"hybrid", "hybrid_rag"}
+                    else "KEYWORD_ONLY"
+                ),
+                "provider_mode": provider_mode,
+                "provider_model": embedding_identity["model"]
+                if embedding_identity
+                else None,
             }
         )
 
@@ -317,7 +389,7 @@ def evaluate(
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "git_commit": git_commit(),
         "git_worktree_dirty": git_worktree_dirty(),
-        "provider_mode": "offline_keyword",
+        "provider_mode": provider_mode,
         "generation_provider_configured": cfg.generation_provider,
         "generation_model_configured": cfg.generation_model or cfg.search_parser_model,
         "embedding_provider_configured": cfg.embedding_provider,
@@ -327,7 +399,13 @@ def evaluate(
         "semantic_weight": cfg.hybrid_semantic_weight,
         "keyword_weight": cfg.hybrid_keyword_weight,
         "completed_embeddings": completed_embeddings,
-        "note": "Offline FTS baseline; no generation or embedding provider was called.",
+        "semantic_index_ready": semantic_ready if embedder is not None else False,
+        "note": {
+            "offline_keyword": "PostgreSQL FTS only; no embedding or text-generation calls.",
+            "semantic": "Semantic retrieval only when a compatible index is ready; no text-generation calls.",
+            "hybrid": "Existing hybrid ranking; safely falls back to FTS when semantic retrieval is unavailable. No text-generation calls.",
+            "hybrid_rag": "Same hybrid retrieval plus deterministic adversarial grounding validation; no live text-generation calls.",
+        }[provider_mode],
     }
     return {
         "run_metadata": metadata,
@@ -362,6 +440,7 @@ def evaluate(
                 len(row["unsupported_explanation_claims"]) for row in details
             ),
         },
+        "rag_quality_metrics": run_adversarial_grounding_suite(),
         "latency": {
             "total": summarize([row["latency"]["total_latency_ms"] for row in details]),
             "stages": {
@@ -451,7 +530,8 @@ def render_report(result: dict) -> str:
                 "",
                 f"Dataset: {result['run_metadata']['dataset_version']}",
                 f"Catalog: {result['run_metadata']['catalog_snapshot_id']} ({result['run_metadata']['catalog_product_count']} products)",
-                f"Mode: {result['run_metadata']['provider_mode']} (no live providers)",
+                f"Mode: {result['run_metadata']['provider_mode']}",
+                f"Provider mode note: {result['run_metadata']['note']}",
                 f"Queries: {result['query_count']}",
                 "",
                 "## Filter extraction",
@@ -471,13 +551,21 @@ def render_report(result: dict) -> str:
                 f"Violations: {c['constraint_violation_count']} / {c['returned_product_count']} returned products",
                 f"Violation rate: {pct(c['constraint_violation_rate'])}",
                 "",
+                "## RAG grounding safeguards (deterministic adversarial cases)",
+                f"Mean context relevance: {pct(result['rag_quality_metrics']['mean_context_relevance'])}",
+                f"Product attribution accuracy: {pct(result['rag_quality_metrics']['mean_product_attribution_accuracy'])}",
+                f"Unsupported proposal claim rate: {pct(result['rag_quality_metrics']['unsupported_claim_rate'])}",
+                f"Invalid proposed reference rate: {pct(result['rag_quality_metrics']['invalid_reference_rate'])}",
+                f"Invalid references emitted after validation: {result['rag_quality_metrics']['invalid_product_reference_emission_count']}",
+                f"Unsupported claims emitted after validation: {result['rag_quality_metrics']['unsupported_claim_emission_count']}",
+                "",
                 "## Empty results",
                 f"Accuracy: {pct(e['empty_result_accuracy'])}",
                 "",
                 "## Conversation",
                 f"State transition accuracy: {pct(result['conversation_metrics']['state_transition_accuracy'])}",
                 "",
-                "## Latency (offline keyword mode)",
+                f"## Latency ({result['run_metadata']['provider_mode']} mode)",
                 f"Mean: {result['latency']['total']['mean_ms']:.2f} ms"
                 if result["latency"]["total"]["mean_ms"] is not None
                 else "Mean: n/a",
@@ -500,7 +588,9 @@ def main() -> None:
     parser.add_argument("--query-id")
     parser.add_argument("--output", type=Path)
     parser.add_argument(
-        "--provider-mode", choices=["offline_keyword"], default="offline_keyword"
+        "--provider-mode",
+        choices=["offline_keyword", "semantic", "hybrid", "hybrid_rag"],
+        default="offline_keyword",
     )
     args = parser.parse_args()
     result = evaluate(
