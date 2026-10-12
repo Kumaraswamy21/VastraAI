@@ -2,7 +2,7 @@
 
 import hashlib
 import time
-from decimal import ROUND_CEILING, ROUND_FLOOR
+from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
@@ -35,16 +35,17 @@ from fashion_search.search.schemas import (
     SearchState,
     SemanticSearchRequest,
     SemanticSearchResponse,
+    FashionSearchConstraints,
 )
 from fashion_search.search.constraints import (
-    PriceFacts,
     parse_constraints,
-    parse_price_facts,
 )
 from fashion_search.search.hybrid import HybridSearchError, hybrid_search
+from fashion_search.search.preprocess import build_retrieval_query
 from fashion_search.search.sessions import search_session_store
 from fashion_search.search.semantic import SemanticSearchError, semantic_search
 from fashion_search.rag.service import generate_grounded_answer, needs_grounded_answer
+from fashion_search.rag.shopify import generate_shopify_grounded_answer
 from fashion_search.shopify.mcp_client import (
     ShopifyMcpClient,
     ShopifyMcpError,
@@ -53,8 +54,8 @@ from fashion_search.shopify.mcp_client import (
     ShopifyMcpTimeoutError,
 )
 from fashion_search.shopify.schemas import (
+    ShopifyConversationalSearchResponse,
     ShopifyProductResult,
-    ShopifySearchResponse,
     map_shopify_products,
 )
 
@@ -152,45 +153,73 @@ class ConversationalSearchResponse(HybridSearchResponse):
     active_filters: list[ActiveFilter]
 
 
-@router.post("", response_model=ConversationalSearchResponse | ShopifySearchResponse)
+@router.post(
+    "",
+    response_model=ConversationalSearchResponse | ShopifyConversationalSearchResponse,
+)
 def search_catalog(
     body: SearchRequest,
     provider: Literal["local", "shopify"] = Query(default="local"),
-) -> ConversationalSearchResponse | ShopifySearchResponse:
+) -> ConversationalSearchResponse | ShopifyConversationalSearchResponse:
     """Create or refine structured state, then execute the existing hybrid search."""
     if provider == "shopify":
-        if body.session_id:
-            raise HTTPException(
-                status_code=400,
-                detail="Shopify provider does not support search-session refinements",
-            )
-        query = body.query or body.message or ""
-        settings = get_settings()
-        if not settings.shopify_catalog_enabled:
-            raise HTTPException(
-                status_code=503, detail="Shopify catalog search is not enabled"
-            )
-        currency = settings.market_currency.upper()
-        price_facts = parse_price_facts(query)
-        filters: dict[str, object] = {
-            "available": True,
-            "ships_to": {"country": settings.shopify_catalog_country.upper()},
-        }
-        if currency == "INR" and price_facts.detected and not price_facts.invalid:
-            price_filter: dict[str, int] = {}
-            if price_facts.minimum is not None:
-                price_filter["min"] = int(
-                    (price_facts.minimum * 100).to_integral_value(
-                        rounding=ROUND_CEILING
-                    )
-                )
-            if price_facts.maximum is not None:
-                price_filter["max"] = int(
-                    (price_facts.maximum * 100).to_integral_value(rounding=ROUND_FLOOR)
-                )
-            if price_filter:
-                filters["price"] = price_filter
+        started = time.perf_counter()
+        identifier = request_id()
+        search_request_id_var.set(identifier)
+        session_id = body.session_id
+        message = body.query or body.message or ""
         try:
+            if not body.session_id:
+                state = initial_search_state(message)
+                session_id, state = search_session_store.create(state)
+                interpreted_as: Literal["initial", "refinement", "new_search"] = (
+                    "initial"
+                )
+            else:
+                current = search_session_store.get(body.session_id)
+                if current is None:
+                    raise HTTPException(
+                        status_code=404, detail="search session not found"
+                    )
+                message = body.message or "Updated filters"
+                if body.updates is not None:
+                    refinement = SearchRefinement(updates=body.updates)
+                else:
+                    refinement = deterministic_refinement(message, current)
+                    if refinement is None and needs_grounded_answer(message):
+                        refinement = SearchRefinement()
+                    elif refinement is None:
+                        refinement = FollowUpInterpreter(
+                            GenerationRouter()
+                        ).interpret(message, current)
+                state = SearchStateReducer().apply(
+                    current,
+                    refinement,
+                    message=message,
+                    expected_revision=body.expected_revision
+                    if body.expected_revision is not None
+                    else -1,
+                )
+                interpreted_as = (
+                    "new_search" if refinement.reset_search else "refinement"
+                )
+
+            assert session_id is not None
+            settings = get_settings()
+            if not settings.shopify_catalog_enabled:
+                raise HTTPException(
+                    status_code=503, detail="Shopify catalog search is not enabled"
+                )
+            currency = state.constraints.currency.upper()
+            query = _shopify_retrieval_query(state)
+            filters: dict[str, object] = {
+                "available": True,
+                "ships_to": {"country": settings.shopify_catalog_country.upper()},
+            }
+            if currency == settings.market_currency.upper():
+                price_filter = _shopify_price_filter(state.constraints, currency)
+                if price_filter:
+                    filters["price"] = price_filter
             with ShopifyMcpClient(settings) as shopify_client:
                 content = shopify_client.search_catalog(
                     query,
@@ -198,6 +227,92 @@ def search_catalog(
                     currency=currency,
                     filters=filters,
                 )
+            products = [
+                product
+                for product in map_shopify_products(content.get("products"))
+                if product.available is not False
+                and _shopify_product_matches_price(product, state.constraints)
+            ]
+            if state.sort_preference in {"PRICE_ASC", "PRICE_DESC"}:
+                reverse = state.sort_preference == "PRICE_DESC"
+                products.sort(
+                    key=lambda product: (
+                        product.price_min is None,
+                        product.price_min or Decimal("0"),
+                    ),
+                    reverse=reverse,
+                )
+
+            answer = None
+            referenced_product_ids: list[str] = []
+            rag_metrics: dict[str, object] = {}
+            if (
+                getattr(settings, "rag_enabled", True)
+                and products
+                and needs_grounded_answer(message)
+            ):
+                rag_result = generate_shopify_grounded_answer(
+                    message, products, settings=settings
+                )
+                answer = rag_result.answer
+                referenced_product_ids = rag_result.referenced_product_ids
+                rag_metrics = {
+                    "rag_generation_latency_ms": round(
+                        rag_result.generation_latency_ms, 1
+                    ),
+                    "total_rag_latency_ms": round(
+                        (time.perf_counter() - started) * 1000, 1
+                    ),
+                    "retrieved_context_count": rag_result.context_count,
+                    "context_size_chars": rag_result.context_size_chars,
+                    "generation_provider": rag_result.generation_provider,
+                    "generation_model": rag_result.generation_model,
+                    "grounding_failure": rag_result.grounding_failure,
+                    "invalid_product_reference": rag_result.invalid_product_reference,
+                }
+            if body.session_id:
+                search_session_store.commit(
+                    session_id,
+                    state,
+                    expected_revision=state.revision - 1,
+                )
+            pagination = content.get("pagination")
+            return ShopifyConversationalSearchResponse(
+                query=state.original_query,
+                total=len(products),
+                results=products,
+                has_next_page=(
+                    bool(pagination.get("has_next_page", False))
+                    if isinstance(pagination, dict)
+                    else False
+                ),
+                session_id=session_id,
+                revision=state.revision,
+                interpreted_as=interpreted_as,
+                state=state,
+                active_filters=active_filters(state),
+                answer=answer,
+                referenced_product_ids=referenced_product_ids,
+                metrics=rag_metrics,
+            )
+        except RevisionConflictError as exc:
+            _record_search(
+                None,
+                started=started,
+                session_id=session_id,
+                query=message,
+                error_type="REVISION_CONFLICT",
+            )
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except StateTransitionError as exc:
+            _record_search(
+                None,
+                started=started,
+                session_id=session_id,
+                query=message,
+                error_type="INVALID_SEARCH_STATE",
+            )
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         except ShopifyMcpRateLimitError as exc:
             headers = {"Retry-After": exc.retry_after} if exc.retry_after else None
             raise HTTPException(
@@ -209,24 +324,6 @@ def search_catalog(
             raise HTTPException(status_code=502, detail=str(exc)) from exc
         except ShopifyMcpError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-        products = [
-            product
-            for product in map_shopify_products(content.get("products"))
-            if product.available is not False
-            and _shopify_product_matches_price(product, price_facts, currency)
-        ]
-        pagination = content.get("pagination")
-        return ShopifySearchResponse(
-            query=query,
-            total=len(products),
-            results=products,
-            has_next_page=(
-                bool(pagination.get("has_next_page", False))
-                if isinstance(pagination, dict)
-                else False
-            ),
-        )
 
     started = time.perf_counter()
     identifier = request_id()
@@ -381,32 +478,68 @@ def search_hybrid(body: HybridSearchRequest) -> HybridSearchResponse:
 
 
 def _shopify_product_matches_price(
-    product: ShopifyProductResult, price_facts: PriceFacts, currency: str
+    product: ShopifyProductResult, constraints: FashionSearchConstraints
 ) -> bool:
-    """Enforce explicit INR bounds if catalog search returns broader results."""
-    if not price_facts.detected or price_facts.invalid:
+    """Enforce current session bounds against each returned live price range."""
+    if constraints.price_min is None and constraints.price_max is None:
         return True
-    if currency != "INR":
-        return True
+    currency = constraints.currency.upper()
     if product.currency != currency:
         return False
-    if price_facts.maximum is not None:
-        if product.price_min is None or product.price_min > price_facts.maximum:
+    if constraints.price_max is not None:
+        if product.price_min is None or product.price_min > constraints.price_max:
             return False
         if (
-            product.price_min == price_facts.maximum
-            and price_facts.maximum_inclusive is False
+            product.price_min == constraints.price_max
+            and constraints.price_max_inclusive is False
         ):
             return False
-    if price_facts.minimum is not None:
-        if product.price_max is None or product.price_max < price_facts.minimum:
+    if constraints.price_min is not None:
+        if product.price_max is None or product.price_max < constraints.price_min:
             return False
         if (
-            product.price_max == price_facts.minimum
-            and price_facts.minimum_inclusive is False
+            product.price_max == constraints.price_min
+            and constraints.price_min_inclusive is False
         ):
             return False
     return True
+
+
+def _shopify_price_filter(
+    constraints: FashionSearchConstraints, currency: str
+) -> dict[str, int]:
+    """Convert price bounds to Shopify minor currency units."""
+    zero_decimal = {
+        "BIF", "CLP", "DJF", "GNF", "ISK", "JPY", "KMF", "KRW", "PYG",
+        "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF",
+    }
+    three_decimal = {"BHD", "IQD", "JOD", "KWD", "LYD", "OMR", "TND"}
+    exponent = 0 if currency in zero_decimal else 3 if currency in three_decimal else 2
+    scale = Decimal(10) ** exponent
+    result: dict[str, int] = {}
+    if constraints.price_min is not None:
+        scaled = constraints.price_min * scale
+        rounding = ROUND_CEILING if constraints.price_min_inclusive else ROUND_FLOOR
+        value = int(scaled.to_integral_value(rounding=rounding))
+        if constraints.price_min_inclusive is False and Decimal(value) == scaled:
+            value += 1
+        result["min"] = value
+    if constraints.price_max is not None:
+        scaled = constraints.price_max * scale
+        result["max"] = int(scaled.to_integral_value(rounding=ROUND_FLOOR))
+    return result
+
+
+def _shopify_retrieval_query(state: SearchState) -> str:
+    """Use current search intent and current filters, dropping stale values."""
+    semantic = " ".join([state.semantic_query, *state.semantic_modifiers]).strip()
+    query = build_retrieval_query(semantic, state.constraints)
+    extra = [
+        state.constraints.occasion,
+        state.constraints.size,
+        state.constraints.gender,
+    ]
+    return " ".join([query, *(value for value in extra if value)]).strip()
 
 
 @router.post("/semantic", response_model=SemanticSearchResponse)

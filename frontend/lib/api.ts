@@ -139,6 +139,7 @@ export type ShopifyProductResult = {
   merchant_domain?: string | null;
   merchant_url?: string | null;
   available?: boolean | null;
+  variants?: Record<string, unknown>[] | null;
 };
 
 export type ShopifySearchResponse = {
@@ -146,6 +147,22 @@ export type ShopifySearchResponse = {
   total: number;
   results: ShopifyProductResult[];
   has_next_page: boolean;
+  session_id?: string;
+  revision?: number;
+  interpreted_as?: "initial" | "refinement" | "new_search";
+  state?: {
+    original_query: string;
+    current_query: string;
+    constraints: Record<string, unknown>;
+    semantic_query: string;
+    semantic_modifiers: string[];
+    sort_preference: "RELEVANCE" | "PRICE_ASC" | "PRICE_DESC";
+    revision: number;
+  };
+  active_filters?: ActiveFilter[];
+  answer?: string | null;
+  referenced_product_ids?: string[];
+  metrics?: Record<string, unknown>;
 };
 
 export class ApiError extends Error {
@@ -272,15 +289,29 @@ export async function fetchConversationalSearch(
 }
 
 export async function fetchShopifySearch(
-  query: string,
+  queryOrBody: string | {
+    session_id: string;
+    expected_revision: number;
+    message?: string;
+    updates?: {
+      field: ConstraintField;
+      operation: "SET" | "REMOVE" | "KEEP" | "RELAX";
+      value?: string | number;
+      inclusive?: boolean | null;
+    }[];
+    limit?: number;
+  },
   limit = 10,
   signal?: AbortSignal,
 ): Promise<ShopifySearchResponse> {
+  const body = typeof queryOrBody === "string"
+    ? { query: queryOrBody, limit }
+    : { ...queryOrBody, limit: queryOrBody.limit ?? limit };
   return readJson(
     await fetch(`${apiBase()}/search?provider=shopify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, limit }),
+      body: JSON.stringify(body),
       signal,
     }),
   );

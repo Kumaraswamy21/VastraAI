@@ -14,12 +14,20 @@ import {
 import { formatInr, swatchForColor } from "@/lib/color-swatch";
 import { restoreSnapshot, saveSnapshot, type ConversationMessage } from "@/lib/search-session";
 import { ShopifyProductsGrid } from "@/app/shopify-search-panel";
+import { ShopifyChatPanel, type ShopifyChatMessage } from "@/app/shopify-chat-panel";
 
 type ViewState = {
   status: "idle" | "loading" | "error" | "ready";
   data: ConversationalSearchResponse | null;
   error: string | null;
   messages: ConversationMessage[];
+};
+
+type SearchUpdate = {
+  field: ConstraintField;
+  operation: "REMOVE" | "SET";
+  value?: string | number;
+  inclusive?: boolean | null;
 };
 
 const initialState: ViewState = { status: "idle", data: null, error: null, messages: [] };
@@ -50,6 +58,82 @@ function SearchMark() {
   return <span aria-hidden="true" className="grid size-9 place-items-center rounded-full bg-stone-900 text-sm font-semibold text-white">V</span>;
 }
 
+function ShopifyLanding({
+  draft, setDraft, onSubmit, busy, error,
+}: {
+  draft: string;
+  setDraft: (value: string) => void;
+  onSubmit: (event: React.SyntheticEvent) => void;
+  busy: boolean;
+  error: string | null;
+}) {
+  return (
+    <div>
+      <div className="shopify-hero relative isolate grid overflow-hidden rounded-[2rem] border border-[#e5dfd4] bg-[#eee9df] shadow-[0_28px_80px_-54px_rgba(41,37,36,0.45)] lg:min-h-[510px] lg:grid-cols-[1fr_0.92fr]">
+        <div className="relative z-10 flex flex-col justify-center px-6 py-10 sm:px-10 sm:py-14 lg:px-14 lg:py-16">
+          <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.23em] text-stone-600"><span className="size-1.5 rounded-full bg-emerald-700" /> Live from Shopify merchants</p>
+          <h1 className="mt-5 max-w-xl font-serif text-[2.7rem] leading-[1.04] tracking-tight text-[#292720] sm:text-6xl">Good finds.<br /><span className="italic text-[#8a5947]">Found for you.</span></h1>
+          <p className="mt-5 max-w-md text-sm leading-6 text-stone-600 sm:text-base sm:leading-7">Explore independent merchant collections with one natural search. Refine by style, size and budget as you go.</p>
+          <form onSubmit={onSubmit} className="mt-8 max-w-xl rounded-2xl border border-white/80 bg-white/90 p-2 shadow-sm backdrop-blur">
+            <label htmlFor="shopify-landing-query" className="sr-only">Search live Shopify products</label>
+            <div className="flex items-center gap-2">
+              <span aria-hidden="true" className="pl-3 text-xl text-stone-400">⌕</span>
+              <input id="shopify-landing-query" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Try ‘blue cotton kurta under ₹1,500’" className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-stone-400" />
+              <button type="submit" disabled={busy || !draft.trim()} className="shrink-0 rounded-xl bg-stone-900 px-4 py-3 text-xs font-medium text-white transition hover:bg-stone-700 disabled:opacity-40">{busy ? "Searching…" : "Explore"}</button>
+            </div>
+          </form>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {["Summer cotton", "Wedding guest", "Everyday under ₹2,000"].map((idea) => <button type="button" key={idea} onClick={() => setDraft(idea)} className="rounded-full border border-stone-400/60 bg-white/40 px-3.5 py-2 text-[11px] text-stone-700 transition hover:border-stone-700 hover:bg-white/75">{idea}</button>)}
+          </div>
+          {busy && <p className="mt-4 text-sm text-stone-500" role="status">Searching live Shopify listings…</p>}
+          {error && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
+          <div className="mt-9 flex flex-wrap gap-x-7 gap-y-3 border-t border-stone-400/30 pt-5 text-[10px] font-medium uppercase tracking-[0.15em] text-stone-500">
+            <span>Live merchant offers</span><span>Price-aware search</span><span>Nothing copied locally</span>
+          </div>
+        </div>
+
+        <div className="relative min-h-[330px] overflow-hidden sm:min-h-[420px] lg:min-h-[510px]">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_42%,rgba(255,255,255,0.76),transparent_52%),linear-gradient(140deg,#e5d9ca,#d9d8c9_54%,#b9c1ae)]" />
+          <div className="absolute -right-14 top-10 size-60 rounded-full border border-white/40 sm:size-80" />
+          <div className="absolute right-2 top-20 size-48 rounded-full border border-white/35 sm:right-8 sm:top-24 sm:size-64" />
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-[linear-gradient(transparent,rgba(74,66,54,0.1))]" />
+          <div className="absolute left-[8%] top-[13%] w-[68%] max-w-[340px] rotate-[-5deg] overflow-hidden rounded-[1.25rem] border border-white/75 bg-[#f7f3ea] p-2 shadow-[0_28px_55px_-24px_rgba(50,44,35,0.42)]">
+            <svg viewBox="0 0 360 390" role="img" aria-label="Decorative illustration of a blue cotton kurta and fabric swatches" className="block w-full rounded-[0.9rem]">
+              <defs>
+                <linearGradient id="hero-paper" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#f4ecdf"/><stop offset="1" stopColor="#e1e7da"/></linearGradient>
+                <linearGradient id="hero-blue" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#6d8790"/><stop offset=".52" stopColor="#405e68"/><stop offset="1" stopColor="#2d4853"/></linearGradient>
+                <linearGradient id="hero-rose" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#c58f79"/><stop offset="1" stopColor="#a76e5e"/></linearGradient>
+              </defs>
+              <rect width="360" height="390" fill="url(#hero-paper)" />
+              <path d="M24 304c54-46 110-32 150 7s91 39 162-12v91H24z" fill="#c6cebd" opacity=".65" />
+              <circle cx="285" cy="76" r="39" fill="#d3b48d" opacity=".65" />
+              <path d="M115 69l35-14 30 26 29-26 36 14 47 33-25 52-24-14 9 186H80l10-186-25 14-25-52z" fill="url(#hero-blue)" />
+              <path d="M150 55l30 26-23 31-29-33zM209 55l-29 26 23 31 29-33z" fill="#e6ded0" />
+              <path d="M180 81v80m-5-50h10m-10 19h10m-10 19h10" stroke="#d3b48d" strokeWidth="3" strokeLinecap="round" />
+              <path d="M105 195c26 10 47 11 67 2m16 0c21 9 44 8 68-2" fill="none" stroke="#d0bd9c" strokeWidth="2" opacity=".8" />
+              <path d="M124 222h16m-16 14h16m-16 14h16m-16 14h16m-16 14h16m-16 14h16m-16 14h16" stroke="#d0bd9c" strokeWidth="2" opacity=".75" />
+              <path d="M219 222h16m-16 14h16m-16 14h16m-16 14h16m-16 14h16m-16 14h16m-16 14h16" stroke="#d0bd9c" strokeWidth="2" opacity=".75" />
+              <rect x="25" y="28" width="64" height="38" rx="4" fill="url(#hero-rose)" transform="rotate(-8 25 28)" />
+              <rect x="279" y="318" width="50" height="39" rx="4" fill="#d9c7a9" transform="rotate(10 279 318)" />
+              <text x="24" y="365" fill="#665d50" fontSize="9" letterSpacing="2.2" fontFamily="Arial, sans-serif">THE LIVE STYLE EDIT · 01</text>
+            </svg>
+          </div>
+          <div className="absolute bottom-[12%] right-[8%] w-[34%] max-w-[170px] rotate-[7deg] overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-3 shadow-xl backdrop-blur">
+            <div className="flex gap-2"><span className="size-8 rounded-full bg-[#526c71]"/><span className="size-8 rounded-full bg-[#b77d68]"/><span className="size-8 rounded-full bg-[#d3bd99]"/></div>
+            <p className="mt-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-stone-500">Fresh from merchants</p>
+            <p className="mt-1 font-serif text-sm text-stone-800">Made to be found.</p>
+          </div>
+          <div className="absolute right-5 top-5 rounded-full border border-white/70 bg-white/55 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-stone-600 backdrop-blur">VastraAI · Live edit</div>
+        </div>
+      </div>
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 px-1 text-xs text-stone-500">
+        <span>One search across live Shopify merchant catalogs</span>
+        <span>Results, prices and availability are fetched live</span>
+      </div>
+    </div>
+  );
+}
+
 function filterSummary(data: ConversationalSearchResponse): string {
   const category = data.active_filters.find((filter) => filter.key === "category")?.value;
   const color = data.active_filters.find((filter) => filter.key === "color")?.value;
@@ -62,8 +146,11 @@ function filterSummary(data: ConversationalSearchResponse): string {
 export function SearchView() {
   const [draft, setDraft] = useState("");
   const [view, setView] = useState<ViewState>(initialState);
-  const [provider, setProvider] = useState<"local" | "shopify">("local");
+  const [provider, setProvider] = useState<"local" | "shopify">("shopify");
   const [shopifyResult, setShopifyResult] = useState<ShopifySearchResponse | null>(null);
+  const [shopifyMessages, setShopifyMessages] = useState<ShopifyChatMessage[]>([]);
+  const [shopifyPriceMin, setShopifyPriceMin] = useState("");
+  const [shopifyPriceMax, setShopifyPriceMax] = useState("");
   const [hydrated, setHydrated] = useState(false);
   const [conversationOpen, setConversationOpen] = useState(false);
   const [colorChoicesOpen, setColorChoicesOpen] = useState(false);
@@ -90,13 +177,17 @@ export function SearchView() {
     if (container && shouldFollowRef.current) container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
   }, [view.messages, view.status]);
 
-  const execute = useCallback(async (text: string, directUpdate?: { field: ConstraintField; operation: "REMOVE" | "SET"; value?: string }) => {
+  const execute = useCallback(async (text: string, directUpdate?: SearchUpdate | SearchUpdate[]) => {
     if (inFlightRef.current) return;
     const trimmed = text.trim();
     if (!trimmed && !directUpdate) return;
     inFlightRef.current = true;
     shouldFollowRef.current = true;
     const userMessage: ConversationMessage | null = trimmed ? { id: `${Date.now()}-${Math.random()}`, role: "user", content: trimmed } : null;
+    const shopifyUserMessage: ShopifyChatMessage | null = provider === "shopify" && trimmed
+      ? { id: `${Date.now()}-${Math.random()}`, role: "user", content: trimmed }
+      : null;
+    if (shopifyUserMessage) setShopifyMessages((messages) => [...messages, shopifyUserMessage]);
     setView((current) => ({
       ...current,
       status: "loading",
@@ -106,17 +197,42 @@ export function SearchView() {
     setDraft("");
     try {
       if (provider === "shopify") {
-        const result = await fetchShopifySearch(trimmed, 12);
+        const current = shopifyResult;
+        const updates = directUpdate
+          ? Array.isArray(directUpdate) ? directUpdate : [directUpdate]
+          : undefined;
+        const result = await fetchShopifySearch(current?.session_id && current.revision !== undefined
+          ? {
+              session_id: current.session_id,
+              expected_revision: current.revision,
+              ...(updates ? { updates } : { message: trimmed }),
+              limit: 12,
+            }
+          : trimmed, 12);
         setShopifyResult(result);
+        setShopifyPriceMin(String(result.state?.constraints.price_min ?? ""));
+        setShopifyPriceMax(String(result.state?.constraints.price_max ?? ""));
+        const reply = result.answer || (result.total === 0
+          ? "I couldn’t find live listings for those preferences. Try broadening the search or removing a filter."
+          : `I found ${result.total} live Shopify ${result.total === 1 ? "listing" : "listings"}. You can refine by style, size or budget.`);
+        setShopifyMessages((messages) => [...messages, {
+          id: `${Date.now()}-assistant`,
+          role: "assistant",
+          content: reply,
+          productIds: result.referenced_product_ids,
+        }]);
         setView((previous) => ({ ...previous, status: "ready", error: null }));
         return;
       }
       const current = view.data;
+      const updates = directUpdate
+        ? Array.isArray(directUpdate) ? directUpdate : [directUpdate]
+        : undefined;
       const data = await fetchConversationalSearch(current
         ? {
             session_id: current.session_id,
             expected_revision: current.revision,
-            ...(directUpdate ? { updates: [directUpdate] } : { message: trimmed }),
+            ...(updates ? { updates } : { message: trimmed }),
             limit: 12,
           }
         : { query: trimmed, limit: 12 });
@@ -135,7 +251,7 @@ export function SearchView() {
     } finally {
       inFlightRef.current = false;
     }
-  }, [view.data, provider]);
+  }, [view.data, provider, shopifyResult]);
 
   function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
@@ -146,11 +262,27 @@ export function SearchView() {
     void execute("", { field, operation: "REMOVE" });
   }
 
+  function applyShopifyPriceRange(event: React.SyntheticEvent) {
+    event.preventDefault();
+    const updates: SearchUpdate[] = [
+      shopifyPriceMin.trim()
+        ? { field: "price_min", operation: "SET", value: Number(shopifyPriceMin), inclusive: true }
+        : { field: "price_min", operation: "REMOVE" },
+      shopifyPriceMax.trim()
+        ? { field: "price_max", operation: "SET", value: Number(shopifyPriceMax), inclusive: true }
+        : { field: "price_max", operation: "REMOVE" },
+    ];
+    void execute("", updates);
+  }
+
   function startNewSearch() {
     setDraft("");
     setColorChoicesOpen(false);
     setView(initialState);
     setShopifyResult(null);
+    setShopifyMessages([]);
+    setShopifyPriceMin("");
+    setShopifyPriceMax("");
   }
 
   const data = view.data;
@@ -188,7 +320,7 @@ export function SearchView() {
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); onSubmit(event); } }}
-              placeholder={provider === "shopify" ? "Search Shopify products…" : "Search products, styles or occasions…"}
+              placeholder={provider === "shopify" ? shopifyResult ? "Refine Shopify results…" : "Search Shopify products…" : "Search products, styles or occasions…"}
               className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-stone-400"
             />
             <button type="submit" disabled={busy || !draft.trim()} className="ml-2 rounded-full bg-stone-900 px-4 py-2 text-xs font-medium text-white transition hover:bg-stone-700 disabled:opacity-40">Search</button>
@@ -200,13 +332,28 @@ export function SearchView() {
       <main className="mx-auto max-w-[1440px] px-4 pb-16 pt-5 sm:px-7 sm:pt-8">
         {provider === "shopify" ? (
           <section className="min-h-[55vh]" aria-busy={busy}>
-            <div className="mb-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Independent catalog</p>
-              <h1 className="mt-2 font-serif text-3xl capitalize tracking-tight sm:text-4xl">{shopifyResult?.query ?? "Shopify products"}</h1>
-              {busy && <p role="status" className="mt-2 text-sm text-stone-500">Searching Shopify products…</p>}
-            </div>
-            {view.error && <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{view.error}</p>}
-            {shopifyResult && <ShopifyProductsGrid result={shopifyResult} />}
+            {!shopifyResult ? (
+              <ShopifyLanding draft={draft} setDraft={setDraft} onSubmit={onSubmit} busy={busy} error={view.error} />
+            ) : (
+              <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-9">
+                <div className="min-w-0">
+                  <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Live Shopify catalog</p>
+                      <h1 className="mt-2 font-serif text-3xl capitalize tracking-tight sm:text-4xl">{shopifyResult.query}</h1>
+                      {busy && <p role="status" className="mt-2 text-sm text-stone-500">Searching Shopify products…</p>}
+                    </div>
+                    <button type="button" onClick={startNewSearch} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-xs text-stone-600 transition hover:border-stone-500 hover:text-stone-900">New search</button>
+                  </div>
+                  {shopifyResult.active_filters?.length ? <div className="mb-5 flex flex-wrap gap-2" aria-label="Active Shopify filters">{shopifyResult.active_filters.map((filter) => <button key={filter.key} onClick={() => removeFilter(filter.key)} disabled={busy} aria-label={`Remove ${filter.label}: ${filter.value}`} className="rounded-full border border-stone-300 bg-white px-3.5 py-1.5 text-xs text-stone-700 transition hover:border-stone-600 disabled:opacity-50">{filter.value} <span aria-hidden="true" className="ml-1 text-stone-400">×</span></button>)}</div> : null}
+                  {shopifyResult.session_id && <form onSubmit={applyShopifyPriceRange} className="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-stone-200 bg-white p-4"><label className="text-xs text-stone-600">Minimum price ({String(shopifyResult.state?.constraints.currency ?? "INR")})<input aria-label="Shopify minimum price" type="number" min="0" step="1" value={shopifyPriceMin} onChange={(event) => setShopifyPriceMin(event.target.value)} className="mt-1 block w-32 rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900" /></label><label className="text-xs text-stone-600">Maximum price ({String(shopifyResult.state?.constraints.currency ?? "INR")})<input aria-label="Shopify maximum price" type="number" min="0" step="1" value={shopifyPriceMax} onChange={(event) => setShopifyPriceMax(event.target.value)} className="mt-1 block w-32 rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900" /></label><button type="submit" disabled={busy} className="rounded-full bg-stone-900 px-4 py-2 text-xs font-medium text-white disabled:opacity-40">Apply price filters</button><span className="text-xs text-stone-500">Filters live offers; seller prices stay unchanged.</span></form>}
+                  {shopifyResult.results.length ? <ShopifyProductsGrid result={shopifyResult} /> : <div className="rounded-3xl border border-stone-200 bg-white px-6 py-12 text-center"><span className="text-3xl" aria-hidden="true">⌕</span><h2 className="mt-3 font-serif text-2xl">No live listings found</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-stone-600">Try a wider price range or ask VastraAI to adjust your search.</p></div>}
+                </div>
+                <aside className="xl:sticky xl:top-[88px]">
+                  <ShopifyChatPanel messages={shopifyMessages} products={shopifyResult.results} draft={draft} setDraft={setDraft} onSubmit={onSubmit} busy={busy} error={view.error} />
+                </aside>
+              </div>
+            )}
           </section>
         ) : !data ? (
           <section className="mx-auto max-w-4xl py-14 text-center sm:py-24">

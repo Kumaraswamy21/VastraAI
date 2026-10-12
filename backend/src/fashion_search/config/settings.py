@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     shopify_agent_profile_url: str = ""
     shopify_catalog_country: str = Field(default="IN", pattern=r"^[A-Za-z]{2}$")
     shopify_mcp_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
+    shopify_rag_model: str = Field(default="gemini-3.5-flash-lite", min_length=1)
     cors_origins: str = "http://localhost:3000"
     log_level: str = "INFO"
     app_environment: str = Field(

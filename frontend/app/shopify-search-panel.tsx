@@ -30,13 +30,18 @@ function ShopifyCard({ product }: { product: ShopifyProductResult }) {
   const productUrl = product.product_url ?? product.merchant_url;
   const content = (
     <>
-      {product.image_url ? (
-        // Shopify requires catalog images to be rendered from their live URL.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={product.image_url} alt={product.image_alt ?? product.title} className="aspect-[4/4.6] w-full object-cover" loading="lazy" />
-      ) : (
-        <div className="grid aspect-[4/4.6] place-items-center bg-stone-100 text-xs text-stone-500">Image unavailable</div>
-      )}
+      <div className="group relative overflow-hidden bg-[linear-gradient(145deg,#eee9df,#e4e5dc)]">
+        {product.image_url ? (
+          // Shopify requires catalog images to be rendered from their live URL.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={product.image_url} alt={product.image_alt ?? product.title} className="aspect-[4/4.6] w-full object-cover transition duration-500 group-hover:scale-[1.035]" loading="lazy" />
+        ) : (
+          <div className="grid aspect-[4/4.6] place-items-center text-xs text-stone-500"><span className="rounded-full border border-white/70 bg-white/60 px-4 py-2 backdrop-blur">Image unavailable</span></div>
+        )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-stone-950/25 to-transparent" />
+        <span className="absolute left-3 top-3 rounded-full border border-white/70 bg-white/85 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.15em] text-stone-700 backdrop-blur">Live offer</span>
+        {product.available === false && <span className="absolute bottom-3 left-3 rounded-full bg-stone-900/80 px-2.5 py-1 text-[9px] font-medium text-white">Currently unavailable</span>}
+      </div>
       <div className="p-4">
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500">{product.merchant_name ?? "Shopify merchant"}</p>
         <h3 className="mt-1.5 line-clamp-2 min-h-10 text-sm font-medium leading-5 text-stone-900">{product.title}</h3>
@@ -53,7 +58,7 @@ function ShopifyCard({ product }: { product: ShopifyProductResult }) {
       href={productUrl}
       target="_blank"
       rel="noreferrer"
-      className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white transition hover:border-stone-400 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-700"
+      className="group overflow-hidden rounded-2xl border border-stone-200/80 bg-white transition duration-200 hover:-translate-y-0.5 hover:border-stone-400 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-700"
     >
       {content}
     </a>

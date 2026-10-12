@@ -1,7 +1,7 @@
 """API request and response shapes for live Shopify catalog results."""
 
 from decimal import Decimal, InvalidOperation
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import (
     AnyHttpUrl,
@@ -11,6 +11,8 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
 )
+
+from fashion_search.search.schemas import ActiveFilter, SearchState
 
 
 class ShopifySearchRequest(BaseModel):
@@ -42,6 +44,19 @@ class ShopifySearchResponse(BaseModel):
     total: int = Field(ge=0)
     results: list[ShopifyProductResult]
     has_next_page: bool = False
+
+
+class ShopifyConversationalSearchResponse(ShopifySearchResponse):
+    """Search state and grounded answer; product data remains response-only."""
+
+    session_id: str
+    revision: int
+    interpreted_as: Literal["initial", "refinement", "new_search"]
+    state: SearchState
+    active_filters: list[ActiveFilter]
+    answer: str | None = None
+    referenced_product_ids: list[str] = Field(default_factory=list)
+    metrics: dict[str, Any] = Field(default_factory=dict)
 
 
 def map_shopify_product(raw: dict[str, Any]) -> ShopifyProductResult | None:
