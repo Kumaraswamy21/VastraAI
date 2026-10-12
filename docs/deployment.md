@@ -32,8 +32,19 @@ Keep one backend instance for now: conversational search sessions are held in pr
 | `OLLAMA_GENERATION_MODEL` | Ollama generation model |
 | `OLLAMA_EMBEDDING_MODEL` | Ollama embedding model |
 | `OLLAMA_EMBEDDING_DIMENSIONS` | Output dimension of the selected Ollama embedding model |
+| `SHOPIFY_CATALOG_ENABLED` | Set `true` to enable the separate Shopify search endpoint |
+| `SHOPIFY_CLIENT_ID` | Shopify Dev Dashboard Catalogs API client ID |
+| `SHOPIFY_CLIENT_SECRET` | Shopify Dev Dashboard Catalogs API client secret; keep secret |
+| `SHOPIFY_AGENT_PROFILE_URL` | HTTPS URL for a UCP agent profile with catalog search and Shopify Global Catalog capabilities |
+| `SHOPIFY_MCP_URL` | Global Catalog MCP endpoint; defaults to Shopify's endpoint |
+| `SHOPIFY_TOKEN_URL` | OAuth token endpoint; defaults to Shopify's endpoint |
+| `SHOPIFY_CATALOG_COUNTRY` | ISO country code used for shipping availability and localization, such as `IN` |
+| `SHOPIFY_MCP_TIMEOUT_SECONDS` | Shopify request timeout; defaults to 10 seconds |
+| `SHOPIFY_RAG_MODEL` | Gemini model used for Shopify grounded answers; defaults to `gemini-3.5-flash-lite` |
 
 Only set the provider-specific values you use. If Neon has IP restrictions enabled, allow connections from the Render service's outbound IP addresses.
+
+Shopify search is disabled unless explicitly enabled with client credentials and an agent profile URL. Product data is returned live and is not persisted by this app. Shopify search results must not be cached; product images are loaded directly from Shopify and shown with their merchant product link. The backend caches only the access token in process memory and refreshes it before its documented 60-minute expiry.
 
 After the first deploy and successful migration, open the service shell and run `seed-catalog` once. This loads the repo's 750 synthetic products into Neon. The seed is idempotent for an already seeded catalog.
 
