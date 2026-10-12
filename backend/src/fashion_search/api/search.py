@@ -189,9 +189,9 @@ def search_catalog(
                     if refinement is None and needs_grounded_answer(message):
                         refinement = SearchRefinement()
                     elif refinement is None:
-                        refinement = FollowUpInterpreter(
-                            GenerationRouter()
-                        ).interpret(message, current)
+                        refinement = FollowUpInterpreter(GenerationRouter()).interpret(
+                            message, current
+                        )
                 state = SearchStateReducer().apply(
                     current,
                     refinement,
@@ -510,8 +510,22 @@ def _shopify_price_filter(
 ) -> dict[str, int]:
     """Convert price bounds to Shopify minor currency units."""
     zero_decimal = {
-        "BIF", "CLP", "DJF", "GNF", "ISK", "JPY", "KMF", "KRW", "PYG",
-        "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF",
+        "BIF",
+        "CLP",
+        "DJF",
+        "GNF",
+        "ISK",
+        "JPY",
+        "KMF",
+        "KRW",
+        "PYG",
+        "RWF",
+        "UGX",
+        "VND",
+        "VUV",
+        "XAF",
+        "XOF",
+        "XPF",
     }
     three_decimal = {"BHD", "IQD", "JOD", "KWD", "LYD", "OMR", "TND"}
     exponent = 0 if currency in zero_decimal else 3 if currency in three_decimal else 2
@@ -534,12 +548,24 @@ def _shopify_retrieval_query(state: SearchState) -> str:
     """Use current search intent and current filters, dropping stale values."""
     semantic = " ".join([state.semantic_query, *state.semantic_modifiers]).strip()
     query = build_retrieval_query(semantic, state.constraints)
+    # Shopify's catalog search performs best with normalized category before
+    # color. build_retrieval_query appends color before category for local FTS.
+    for facet in (state.constraints.category, state.constraints.color):
+        if facet and query.casefold().endswith(facet.casefold()):
+            query = query[: -len(facet)].rstrip()
     extra = [
         state.constraints.occasion,
         state.constraints.size,
         state.constraints.gender,
     ]
-    return " ".join([query, *(value for value in extra if value)]).strip()
+    indexed_facets = [state.constraints.category, state.constraints.color]
+    return " ".join(
+        [
+            query,
+            *(value for value in indexed_facets if value),
+            *(value for value in extra if value),
+        ]
+    ).strip()
 
 
 @router.post("/semantic", response_model=SemanticSearchResponse)

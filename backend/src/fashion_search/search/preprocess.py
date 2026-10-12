@@ -80,27 +80,40 @@ def build_retrieval_query(
     # SearchState keeps the original natural-language query across refinements.
     # Remove every recognized hard-filter phrase before keyword retrieval so
     # stale values (e.g. "black" after changing to blue) cannot veto new filters.
+    occasion_phrases = set(OCCASIONS)
+    occasion_phrases.update(
+        alias
+        for alias, canonical in OCCASION_ALIASES.items()
+        if canonical == constraints.occasion
+    )
     facet_phrases = (
         set(CATEGORIES)
         | set(CATEGORY_ALIASES)
         | set(COLORS_SUPPORTED)
         | set(COLOR_ALIASES)
-        | set(OCCASIONS)
-        | set(OCCASION_ALIASES)
+        | occasion_phrases
         | set(SIZES)
         | set(_GENDER_PHRASES)
     )
     facet_phrases |= {f"size {size}" for size in SIZES}
     result = _strip_phrases(result, facet_phrases)
-
-    # Category and color are indexed in PostgreSQL FTS, so add only their
-    # currently authoritative values back after stale terms have been removed.
-    indexed_facets = [constraints.category, constraints.color]
-    result = " ".join([result, *(value for value in indexed_facets if value)]).strip()
-
+    result = re.sub(
+        r"\b(?:for|at|on|during)\s+(?:a|an|the)\s*$",
+        "",
+        result,
+        flags=re.IGNORECASE,
+    )
     result = re.sub(
         r"\b(?:for|at|on|during)\s*$", "", result, flags=re.IGNORECASE
     ).strip(" ,.")
+    result = re.sub(
+        r"^(?:a|an|the)\s+|\s+(?:a|an|the)$", "", result, flags=re.IGNORECASE
+    )
+
+    # Category and color are indexed in PostgreSQL FTS, so add only their
+    # currently authoritative values back after stale terms have been removed.
+    indexed_facets = [constraints.color, constraints.category]
+    result = " ".join([result, *(value for value in indexed_facets if value)]).strip()
 
     # If stripping removed everything, fall back to category/color or original.
     if not result:

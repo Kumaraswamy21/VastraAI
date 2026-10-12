@@ -55,8 +55,12 @@ class ShopifyMcpClientTests(unittest.TestCase):
             ["search_catalog", "get_product", "lookup_catalog"],
         )
         self.assertEqual(captured[0].url.path, "/api/ucp/mcp")
-        self.assertEqual(captured[0].headers["accept"], "application/json, text/event-stream")
-        self.assertEqual(captured[0].read(), b'{"jsonrpc":"2.0","method":"tools/list","id":1}')
+        self.assertEqual(
+            captured[0].headers["accept"], "application/json, text/event-stream"
+        )
+        self.assertEqual(
+            captured[0].read(), b'{"jsonrpc":"2.0","method":"tools/list","id":1}'
+        )
         self.assertFalse(client.is_closed, "injected HTTP clients remain caller-owned")
         client.close()
 
@@ -73,7 +77,11 @@ class ShopifyMcpClientTests(unittest.TestCase):
             captured.append(request)
             return httpx.Response(
                 200,
-                json={"jsonrpc": "2.0", "id": 1, "result": {"structuredContent": response_body}},
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "result": {"structuredContent": response_body},
+                },
             )
 
         transport = httpx.Client(transport=httpx.MockTransport(handler))
@@ -119,8 +127,13 @@ class ShopifyMcpClientTests(unittest.TestCase):
         client = httpx.Client(transport=httpx.MockTransport(handler))
         with ShopifyMcpClient(cfg, client=client) as mcp:
             mcp.list_tools()
-        self.assertEqual(requests[0].read(), b'{"client_id":"client-id","client_secret":"client-secret","grant_type":"client_credentials"}')
-        self.assertEqual(requests[1].headers["authorization"], "Bearer short-lived-token")
+        self.assertEqual(
+            requests[0].read(),
+            b'{"client_id":"client-id","client_secret":"client-secret","grant_type":"client_credentials"}',
+        )
+        self.assertEqual(
+            requests[1].headers["authorization"], "Bearer short-lived-token"
+        )
         client.close()
 
     def test_timeout_is_reported(self) -> None:
@@ -163,9 +176,15 @@ class ShopifyMcpClientTests(unittest.TestCase):
                         mcp.search_catalog("kurta")
             client.close()
 
-    def test_missing_profile_and_incomplete_credentials_fail_before_request(self) -> None:
-        client = httpx.Client(transport=httpx.MockTransport(lambda _: self.fail("sent")))
-        with ShopifyMcpClient(settings(shopify_agent_profile_url=""), client=client) as mcp:
+    def test_missing_profile_and_incomplete_credentials_fail_before_request(
+        self,
+    ) -> None:
+        client = httpx.Client(
+            transport=httpx.MockTransport(lambda _: self.fail("sent"))
+        )
+        with ShopifyMcpClient(
+            settings(shopify_agent_profile_url=""), client=client
+        ) as mcp:
             with self.assertRaises(ShopifyMcpError):
                 mcp.search_catalog("kurta")
         with ShopifyMcpClient(

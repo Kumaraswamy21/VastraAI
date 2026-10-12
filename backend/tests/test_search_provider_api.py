@@ -212,7 +212,9 @@ class SearchProviderApiTests(unittest.TestCase):
         }
         with (
             patch("fashion_search.api.search.get_settings", return_value=self.settings),
-            patch("fashion_search.api.search.ShopifyMcpClient", return_value=mcp_client),
+            patch(
+                "fashion_search.api.search.ShopifyMcpClient", return_value=mcp_client
+            ),
         ):
             initial = self.client.post(
                 "/search?provider=shopify", json={"query": "kurta"}
@@ -250,7 +252,9 @@ class SearchProviderApiTests(unittest.TestCase):
         }
         with (
             patch("fashion_search.api.search.get_settings", return_value=self.settings),
-            patch("fashion_search.api.search.ShopifyMcpClient", return_value=mcp_client),
+            patch(
+                "fashion_search.api.search.ShopifyMcpClient", return_value=mcp_client
+            ),
         ):
             initial = self.client.post(
                 "/search?provider=shopify", json={"query": "cotton kurta"}
@@ -272,11 +276,15 @@ class SearchProviderApiTests(unittest.TestCase):
             ["gid://shopify/p/within"],
         )
         price_filter = next(
-            item for item in refined.json()["active_filters"] if item["key"] == "price_max"
+            item
+            for item in refined.json()["active_filters"]
+            if item["key"] == "price_max"
         )
         self.assertEqual(price_filter["value"], "Under ₹1,000")
         self.assertEqual(
-            mcp_client.__enter__.return_value.search_catalog.call_args.kwargs["filters"]["price"],
+            mcp_client.__enter__.return_value.search_catalog.call_args.kwargs[
+                "filters"
+            ]["price"],
             {"max": 100000},
         )
 
@@ -305,7 +313,9 @@ class SearchProviderApiTests(unittest.TestCase):
         )
         with (
             patch("fashion_search.api.search.get_settings", return_value=self.settings),
-            patch("fashion_search.api.search.ShopifyMcpClient", return_value=mcp_client),
+            patch(
+                "fashion_search.api.search.ShopifyMcpClient", return_value=mcp_client
+            ),
             patch(
                 "fashion_search.api.search.generate_shopify_grounded_answer",
                 return_value=rag_result,

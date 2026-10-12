@@ -53,7 +53,9 @@ class ShopifyRagTests(unittest.TestCase):
     def test_gemini_compatible_schema_omits_unsupported_json_schema_keyword(self):
         schema = ShopifyGroundedGeneration.model_json_schema()
         self.assertNotIn("additionalProperties", schema)
-        self.assertNotIn("additionalProperties", schema["$defs"]["ShopifyGroundedClaim"])
+        self.assertNotIn(
+            "additionalProperties", schema["$defs"]["ShopifyGroundedClaim"]
+        )
 
     def test_answer_uses_only_values_from_bounded_live_product_context(self):
         provider = FakeProvider(
@@ -75,14 +77,21 @@ class ShopifyRagTests(unittest.TestCase):
             )
         )
         result = generate_shopify_grounded_answer(
-            "Which option is breathable?", [product()], settings=settings(), provider=provider
+            "Which option is breathable?",
+            [product()],
+            settings=settings(),
+            provider=provider,
         )
 
         self.assertIn("Soft cotton for warm days", result.answer)
         self.assertNotIn("title is", result.answer)
         self.assertNotIn("description is Cotton kurta", result.answer)
-        self.assertIn("Cotton kurta — description: Soft cotton for warm days", result.answer)
-        self.assertEqual(result.referenced_product_ids, ["gid://shopify/p/cotton-kurta"])
+        self.assertIn(
+            "Cotton kurta — description: Soft cotton for warm days", result.answer
+        )
+        self.assertEqual(
+            result.referenced_product_ids, ["gid://shopify/p/cotton-kurta"]
+        )
         self.assertEqual(result.context_count, 1)
         self.assertIn('"price":"699 INR to 799 INR"', provider.prompt)
 
@@ -106,7 +115,9 @@ class ShopifyRagTests(unittest.TestCase):
 
         self.assertTrue(result.grounding_failure)
         self.assertFalse(result.invalid_product_reference)
-        self.assertEqual(result.answer, "I found 1 live Shopify option matching your preferences.")
+        self.assertEqual(
+            result.answer, "I found 1 live Shopify option matching your preferences."
+        )
 
     def test_exact_price_endpoint_from_live_range_is_accepted(self):
         provider = FakeProvider(
@@ -123,7 +134,10 @@ class ShopifyRagTests(unittest.TestCase):
             )
         )
         result = generate_shopify_grounded_answer(
-            "What is the lowest price?", [product()], settings=settings(), provider=provider
+            "What is the lowest price?",
+            [product()],
+            settings=settings(),
+            provider=provider,
         )
 
         self.assertFalse(result.grounding_failure)
@@ -144,7 +158,10 @@ class ShopifyRagTests(unittest.TestCase):
             )
         )
         result = generate_shopify_grounded_answer(
-            "Is this good for summer?", [product()], settings=settings(), provider=provider
+            "Is this good for summer?",
+            [product()],
+            settings=settings(),
+            provider=provider,
         )
 
         self.assertFalse(result.grounding_failure)
