@@ -7,8 +7,8 @@ The repository contains a Next.js frontend and a FastAPI backend. A straightforw
 1. In Neon, copy the connection string for the database branch this app should use. Prefer a dedicated Neon database or branch so this app's tables and synthetic catalog stay isolated from other applications.
 2. Create a Web Service from this repository in Render. Select the Docker runtime, leave **Root Directory** blank (repository root), set **Dockerfile Path** to `backend/Dockerfile`, and set **Docker Context** to `backend`. These paths are relative to the service root; do not set Root Directory to `backend` at the same time. Alternatively, if Root Directory is `backend`, use Dockerfile Path `Dockerfile` and Docker Context `.`.
 3. Add the environment variables below in the service's Environment settings. Set secret values there; do not commit them to `.env.example` or GitHub Actions.
-4. Configure the service's pre-deploy command as `alembic upgrade head` so migrations run before each deploy. Render's pre-deploy command availability depends on the service plan. If it is unavailable, run migrations from the service shell for the initial deploy and after later schema changes.
-5. Deploy the service and copy its public URL (for example, `https://vastraai-api.onrender.com`).
+4. Deploy the backend Docker service. Its startup command runs `alembic upgrade head` before starting the API, including on plans without a service shell or pre-deploy command. If a migration fails, the API will not start; check the Render deploy log for the Alembic error.
+5. After the service starts, copy its public URL (for example, `https://vastraai-api.onrender.com`).
 
 Use the `DATABASE_URL` from Neon's Connect dialog. A direct connection is suitable for this persistent FastAPI service; use Neon's pooled connection string if you need to limit database connections. The app adds `sslmode=require` if the URL does not include an SSL mode. The first Alembic migration enables pgvector with `CREATE EXTENSION IF NOT EXISTS vector`.
 
@@ -53,7 +53,7 @@ Only set the provider-specific values you use. If Neon has IP restrictions enabl
 
 Shopify search is disabled unless explicitly enabled with client credentials and an agent profile URL. Product data is returned live and is not persisted by this app. Shopify search results must not be cached; product images are loaded directly from Shopify and shown with their merchant product link. The backend caches only the access token in process memory and refreshes it before its documented 60-minute expiry.
 
-After the first deploy and successful migration, open the service shell and run `seed-catalog` once. This loads the repo's 750 synthetic products into Neon. The seed is idempotent for an already seeded catalog.
+After the first deploy and successful migration, run `seed-catalog` once if the database has not already been seeded. This loads the repo's 750 synthetic products into Neon. The seed is idempotent for an already seeded catalog. On a plan without a service shell, run the command against the same Neon database from a trusted local checkout or CI job.
 
 ## 2. Create the frontend on Vercel
 
@@ -80,6 +80,7 @@ If the page shows `Backend: error. Database: unknown. Failed to fetch`, check th
 - In **Vercel**, set `BACKEND_API_URL` to the reachable Render API base URL, with no trailing slash.
 - In **Render** and **Vercel**, set the same `AUTH_JWT_SECRET`; search requests with mismatched values return HTTP 401.
 - If Google sign-in fails, check that `NEXTAUTH_URL` and the Google authorized redirect URI use the same HTTPS origin and end in `/api/auth/callback/google`.
+- If Vercel logs show `[next-auth][error][OAUTH_CALLBACK_HANDLER_ERROR] fetch failed`, check that `BACKEND_API_URL` is set in Vercel's **Production** environment to the public Render HTTPS origin. Open `<BACKEND_API_URL>/health` from outside Render and confirm it responds. Google sign-in calls `/auth/google` on that backend before a session is created; the new log message distinguishes an unreachable backend from an HTTP rejection.
 - If email registration returns HTTP 503, configure Render's `AUTH_EMAIL_FROM` and `AUTH_SMTP_*` settings.
 - If Shopify returns HTTP 403, check the backend log after deploying this version: it distinguishes the token endpoint from the catalog endpoint. Check the Catalogs API client scope, the public agent profile, and the configured `SHOPIFY_MCP_URL`.
 - If Gemini generation returns HTTP 400, inspect the new `api_code` and `api_status` fields in Render logs. Gemini 3.x requests in this version omit deprecated sampling parameters; remaining 400s need their API status and a redacted error reason to diagnose.

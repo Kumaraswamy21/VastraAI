@@ -4,7 +4,11 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { internalToken } from "@/lib/internal-token";
 
 function backendUrl(path: string): string {
-  return `${process.env.BACKEND_API_URL ?? "http://127.0.0.1:8000"}${path}`;
+  const base = process.env.BACKEND_API_URL;
+  if (!base && process.env.NODE_ENV === "production") {
+    throw new Error("BACKEND_API_URL is not configured on the frontend server");
+  }
+  return new URL(path, base ?? "http://127.0.0.1:8000").toString();
 }
 
 export const authOptions: NextAuthOptions = {
@@ -43,16 +47,23 @@ export const authOptions: NextAuthOptions = {
         if (!googleProfile?.sub || !googleProfile.email || googleProfile.email_verified !== true) {
           throw new Error("Google email must be verified");
         }
-        const response = await fetch(backendUrl("/auth/google"), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${internalToken("nextauth", { scope: "account:sync" })}`,
-          },
-          body: JSON.stringify({ subject: googleProfile.sub, email: googleProfile.email }),
-          cache: "no-store",
-        });
-        if (!response.ok) throw new Error("Google account could not be linked");
+        const endpoint = backendUrl("/auth/google");
+        const authorization = `Bearer ${internalToken("nextauth", { scope: "account:sync" })}`;
+        let response: Response;
+        try {
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: authorization,
+            },
+            body: JSON.stringify({ subject: googleProfile.sub, email: googleProfile.email }),
+            cache: "no-store",
+          });
+        } catch (error) {
+          throw new Error("Google account sync could not reach BACKEND_API_URL", { cause: error });
+        }
+        if (!response.ok) throw new Error(`Google account sync returned HTTP ${response.status}`);
         const identity = await response.json() as { id: string; email: string; auth_version: number };
         token.uid = identity.id;
         token.email = identity.email;
