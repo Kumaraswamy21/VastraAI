@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 function GoogleLogo() {
   return <svg aria-hidden="true" viewBox="0 0 48 48" className="size-5 shrink-0">
@@ -14,8 +13,7 @@ function GoogleLogo() {
   </svg>;
 }
 
-export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
-  const router = useRouter();
+export function SignInForm({ callbackUrl, authError }: { callbackUrl: string; authError?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -30,8 +28,7 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
       if (result?.error) {
         setError("Sign-in failed. Check your credentials and verify your email.");
       } else {
-        router.push(result?.url ?? callbackUrl);
-        router.refresh();
+        window.location.assign(result?.url ?? callbackUrl);
       }
     } catch {
       setError("Sign-in is temporarily unavailable.");
@@ -44,6 +41,7 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
     <Link href="/catalog" className="mb-8 font-serif text-2xl">VastraAI</Link>
     <h1 className="font-serif text-4xl">Sign in to search</h1>
     <p className="mt-2 text-sm text-stone-600">Your search preferences stay with your account.</p>
+    {authError && <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">Sign-in could not be completed. Please try again. If this continues, check the Google OAuth and backend settings.</p>}
     <button type="button" onClick={() => signIn("google", { callbackUrl })} className="mt-8 flex items-center justify-center gap-3 rounded-xl border border-stone-300 bg-white px-4 py-3 font-medium transition hover:border-stone-500"><GoogleLogo />Continue with Google</button>
     <div className="my-6 text-center text-xs uppercase tracking-widest text-stone-500">or use email</div>
     <form onSubmit={submit} className="space-y-4">
