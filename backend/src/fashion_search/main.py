@@ -5,6 +5,7 @@ from uuid import uuid4
 from fastapi.middleware.cors import CORSMiddleware
 
 from fashion_search.api.chat import router as chat_router
+from fashion_search.api.auth import router as auth_router
 from fashion_search.api.health import router as health_router
 from fashion_search.api.products import router as products_router
 from fashion_search.api.observability import router as observability_router
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
             request_id_var.reset(token)
 
     app.include_router(health_router)
+    app.include_router(auth_router)
     app.include_router(products_router)
     app.include_router(search_router)
     app.include_router(shopify_router)

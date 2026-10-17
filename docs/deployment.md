@@ -12,7 +12,7 @@ The repository contains a Next.js frontend and a FastAPI backend. A straightforw
 
 Use the `DATABASE_URL` from Neon's Connect dialog. A direct connection is suitable for this persistent FastAPI service; use Neon's pooled connection string if you need to limit database connections. The app adds `sslmode=require` if the URL does not include an SSL mode. The first Alembic migration enables pgvector with `CREATE EXTENSION IF NOT EXISTS vector`.
 
-Keep one backend instance for now: conversational search sessions are held in process memory and are not shared across instances.
+Search sessions are stored in PostgreSQL and can be served by multiple backend instances after migrations run.
 
 | Render variable | Value |
 | --- | --- |
@@ -20,6 +20,13 @@ Keep one backend instance for now: conversational search sessions are held in pr
 | `CORS_ORIGINS` | The exact Vercel production origin, such as `https://vastraai.vercel.app` |
 | `APP_ENVIRONMENT` | `production` |
 | `OBSERVABILITY_DASHBOARD_ENABLED` | `false` |
+| `AUTH_JWT_SECRET` | New random secret of at least 32 characters for production, identical in Render and Vercel; keep it different from `NEXTAUTH_SECRET` |
+| `AUTH_FRONTEND_URL` | Exact public Vercel origin, such as `https://vastraai.vercel.app`, used in verification and reset emails |
+| `AUTH_EMAIL_FROM` | Sender address accepted by your SMTP provider; required for email/password registration and reset |
+| `AUTH_SMTP_HOST`, `AUTH_SMTP_PORT` | SMTP server and port; the app defaults to port `587` |
+| `AUTH_SMTP_USERNAME`, `AUTH_SMTP_PASSWORD` | SMTP login values when the server requires authentication |
+| `AUTH_SMTP_STARTTLS` | `true` for an SMTP server that supports STARTTLS, or `false` if your server does not |
+| `AUTH_ADMIN_EMAILS` | Comma-separated verified account emails allowed to view observability; leave blank to deny all |
 | `GEMINI_API_KEY` | Gemini key, if using Gemini |
 | `GENERATION_PROVIDER` | `gemini` or `ollama` |
 | `GENERATION_MODEL` | Gemini generation model; if blank, `SEARCH_PARSER_MODEL` is used |
@@ -33,7 +40,7 @@ Keep one backend instance for now: conversational search sessions are held in pr
 | `OLLAMA_EMBEDDING_MODEL` | Ollama embedding model |
 | `OLLAMA_EMBEDDING_DIMENSIONS` | Output dimension of the selected Ollama embedding model |
 | `SHOPIFY_CATALOG_ENABLED` | Set `true` to enable the separate Shopify search endpoint |
-| `SHOPIFY_CLIENT_ID` | Shopify Dev Dashboard Catalogs API client ID |
+| `SHOPIFY_CLIENT_ID` | Shopify Dev Dashboard Catalogs API client ID; its token must include `read_global_api_catalog_search` |
 | `SHOPIFY_CLIENT_SECRET` | Shopify Dev Dashboard Catalogs API client secret; keep secret |
 | `SHOPIFY_AGENT_PROFILE_URL` | HTTPS URL for a UCP agent profile with catalog search and Shopify Global Catalog capabilities |
 | `SHOPIFY_MCP_URL` | Global Catalog MCP endpoint; defaults to Shopify's endpoint |
@@ -52,19 +59,32 @@ After the first deploy and successful migration, open the service shell and run 
 
 1. Import the same GitHub repository as a Vercel project.
 2. Set the project Root Directory to `frontend` and leave Next.js as the detected framework.
-3. Add `NEXT_PUBLIC_API_URL` with the Render backend URL, such as `https://vastraai-api.onrender.com`, for the Production environment. This value is compiled into the frontend, so changing it requires a new frontend deployment.
-4. Deploy, then verify the catalog and API health status from the production site.
+3. Set `BACKEND_API_URL` to the Render backend origin, with no trailing slash. Set `NEXTAUTH_URL` to the exact public Vercel origin and `NEXTAUTH_SECRET` to a new random value of at least 32 characters. Set `AUTH_JWT_SECRET` to the same value configured in Render. Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from a Google OAuth **Web application** client. Register `https://<your-vercel-domain>/api/auth/callback/google` as an authorized redirect URI in Google Cloud. Set `AUTH_ADMIN_EMAILS` if the observability dashboard is needed.
+4. Apply the new backend migration before directing the new frontend to the backend. Deploy both services from the same commit, then verify `/health`, the public search landing page, Google sign-in and return to the saved query, email registration/verification and password reset if SMTP is enabled, and an authenticated search.
 
-If preview deployments need to call the API, add each preview origin to `CORS_ORIGINS` or use a stable preview domain. The backend currently accepts an explicit comma-separated origin list.
+Use two different production secrets; do not reuse local development values. Generate each with `openssl rand -hex 32`. The browser calls same-origin Next.js route handlers. Preview deployments need a stable preview domain, a matching OAuth callback URL and `NEXTAUTH_URL`, and separate environment settings.
 
-## Troubleshooting the frontend health status
+| Vercel variable | Value |
+| --- | --- |
+| `BACKEND_API_URL` | Public Render backend origin, without a trailing slash |
+| `NEXTAUTH_URL` | Exact public Vercel origin using HTTPS |
+| `NEXTAUTH_SECRET` | New production random value, at least 32 characters |
+| `AUTH_JWT_SECRET` | Exact same value as Render's `AUTH_JWT_SECRET` |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth Web application credentials for the registered production callback |
+| `AUTH_ADMIN_EMAILS` | Optional; set on both services only if the developer dashboard is needed |
 
-If the page shows `Backend: error. Database: unknown. Failed to fetch`, the browser did not receive a readable response from the API. Check both settings:
+## Troubleshooting production requests
 
-- In **Render**, set `CORS_ORIGINS` to the exact site origin, for example `https://vastraai.vercel.app` (scheme and hostname, with no path or trailing slash). This variable belongs on the backend service, not in Vercel.
-- In **Vercel**, set `NEXT_PUBLIC_API_URL` to the Render API base URL, for example `https://vastraai-api.onrender.com` (no trailing slash). Since this is compiled into the frontend, redeploy Vercel after changing it. A trailing slash makes the current frontend request `//health`.
+If the page shows `Backend: error. Database: unknown. Failed to fetch`, check the Next.js server route and backend URL:
 
-Open `https://<your-render-service>.onrender.com/health` directly. It should return JSON with `backend` and `database` fields. If it returns `database: "error"`, check Render's `DATABASE_URL`, Neon connectivity, and whether migrations ran. If the direct health URL works but the frontend still says `Failed to fetch`, check the browser console for a CORS error and verify the Vercel origin matches `CORS_ORIGINS` exactly; then redeploy/restart Render after changing that setting.
+- In **Vercel**, set `BACKEND_API_URL` to the reachable Render API base URL, with no trailing slash.
+- In **Render** and **Vercel**, set the same `AUTH_JWT_SECRET`; search requests with mismatched values return HTTP 401.
+- If Google sign-in fails, check that `NEXTAUTH_URL` and the Google authorized redirect URI use the same HTTPS origin and end in `/api/auth/callback/google`.
+- If email registration returns HTTP 503, configure Render's `AUTH_EMAIL_FROM` and `AUTH_SMTP_*` settings.
+- If Shopify returns HTTP 403, check the backend log after deploying this version: it distinguishes the token endpoint from the catalog endpoint. Check the Catalogs API client scope, the public agent profile, and the configured `SHOPIFY_MCP_URL`.
+- If Gemini generation returns HTTP 400, inspect the new `api_code` and `api_status` fields in Render logs. Gemini 3.x requests in this version omit deprecated sampling parameters; remaining 400s need their API status and a redacted error reason to diagnose.
+
+Open `https://<your-render-service>.onrender.com/health` directly. It should return JSON with `backend` and `database` fields. If it returns `database: "error"`, check Render's `DATABASE_URL`, Neon connectivity, and whether migrations ran. If the direct health URL works but the frontend still fails, check Vercel's server logs and `BACKEND_API_URL`.
 
 ## Changing models
 
@@ -74,4 +94,4 @@ Embedding settings are also selected through Render variables. A newly seeded ca
 
 ## GitHub Actions and local CI values
 
-The current `.github/workflows/ci.yml` tests the backend against its temporary CI database and builds the frontend with `NEXT_PUBLIC_API_URL=http://localhost:8000`. Those values are for CI only. With platform GitHub integration handling deploys, do not add production API keys or database credentials to the Actions workflow. Set them in Render and Vercel as described above.
+The GitHub Actions workflow uses a temporary CI database. Keep production OAuth, email, and signing secrets in Render and Vercel; do not add them to Actions.

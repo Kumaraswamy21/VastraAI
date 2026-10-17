@@ -6,6 +6,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from fashion_search.catalog.models import Base
+import fashion_search.observability.models  # noqa: F401 - register mapped tables
 from fashion_search.config.settings import get_settings
 from fashion_search.core.db import ensure_sslmode, sqlalchemy_url
 

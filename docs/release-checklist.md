@@ -1,6 +1,6 @@
 # v2.0.0 release preparation checklist
 
-Updated 2026-10-11. This checklist describes the current candidate; it is not a declaration that v2.0.0 has shipped.
+Updated 2026-10-16. This checklist describes the current candidate; it is not a declaration that v2.0.0 has shipped.
 
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
@@ -16,7 +16,11 @@ Updated 2026-10-11. This checklist describes the current candidate; it is not a 
 | Desktop/mobile browser acceptance and screenshots | **Pending** | Verify chat input clears, same-session category switch, chip updates, product/back, refresh, and mobile drawer. Replace stale screenshots. |
 | Remote CI | **Unverified** | Requires a GitHub Actions run after the user commits/pushes. |
 | Dependency audit | **Needs review** | Prior audit reported five high-severity findings in development-only ESLint dependencies; recheck and document disposition. |
-| Session scaling | **Known limitation** | Backend sessions are process-local. Keep one backend worker or implement shared session storage before horizontal scaling. |
+| Session scaling | Implementation changed after this checklist | Search sessions now persist in PostgreSQL with account ownership and atomic revisions; verify against the intended deployment database. |
+| Authentication migration and frontend build | Prepared locally | Migration `20261016_0009` applied on the local database; frontend production build and backend Docker image build passed. Apply the migration to the intended Neon branch before deploying the new frontend. |
+| Production authentication configuration | **Pending user setup** | Set distinct production signing secrets, matching `AUTH_JWT_SECRET` in Render and Vercel, Google OAuth callback, and SMTP sender/connection values as listed in the deployment guide. |
+| Gemini 3.x request parameter | Prepared locally | The Gemini adapter omits deprecated sampling parameters for 3.x models. Inspect `api_code` and `api_status` after deployment if production still returns HTTP 400. |
+| Shopify production 403 | **Unresolved externally** | The next backend deployment distinguishes token-endpoint and catalog-endpoint errors. Verify Catalogs API scope and public agent profile using the resulting stage. |
 | Commit, tag, or publication | **Not done by request** | User will commit manually. No release tag or remote publication has been created. |
 
 Before publishing, complete the pending verification and update [v2.0.0 candidate notes](releases/v2.0.0.md). The [v0.1.0 candidate notes](releases/v0.1.0.md) are retained as historical release preparation.

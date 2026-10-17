@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { restoreSearch, saveSearch, SEARCH_SESSION_KEY } from "../lib/search-session.ts";
+import { restoreSearch, saveSearch, restoreSnapshot, saveSnapshot, searchSessionKey, SEARCH_SESSION_KEY } from "../lib/search-session.ts";
 
 function storage() {
   const values = new Map();
@@ -29,4 +29,12 @@ test("invalid or partial storage cannot restore a session", () => {
   assert.equal(restoreSearch(store), null);
   store.setItem(SEARCH_SESSION_KEY, JSON.stringify({session_id: "x", revision: 1}));
   assert.equal(restoreSearch(store), null);
+});
+
+test("view snapshots are isolated by account", () => {
+  const store = storage();
+  const response = { session_id: "alice-session", revision: 0, results: [], active_filters: [], state: {} };
+  saveSnapshot(store, response, [], searchSessionKey("alice"));
+  assert.equal(restoreSnapshot(store, searchSessionKey("bob")), null);
+  assert.equal(restoreSnapshot(store, searchSessionKey("alice"))?.data.session_id, "alice-session");
 });

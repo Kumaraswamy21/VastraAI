@@ -9,6 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
+from auth_helpers import authorize, ensure_test_user
 
 from fashion_search.search.constraints import fallback_parse
 from fashion_search.search.filters import (
@@ -273,6 +274,8 @@ class HybridIntegrationTests(unittest.TestCase):
     def test_hybrid_endpoint_keyword_only_fallback(self) -> None:
         from fashion_search.main import app
 
+        authorize(app)
+        self.addCleanup(app.dependency_overrides.clear)
         constraints = fallback_parse("black dress under ₹4000")
         client = TestClient(app)
         with patch("fashion_search.search.hybrid.parse_constraints") as parse:
@@ -299,6 +302,9 @@ class HybridIntegrationTests(unittest.TestCase):
     def test_post_search_alias(self) -> None:
         from fashion_search.main import app
 
+        authorize(app)
+        self.addCleanup(app.dependency_overrides.clear)
+        ensure_test_user()
         client = TestClient(app)
         with (
             patch("fashion_search.api.search.hybrid_search") as search,

@@ -1,6 +1,6 @@
 # VastraAI
 
-VastraAI is a fashion discovery app with conversational search, exact catalog filters, PostgreSQL full-text retrieval, optional compatible-space semantic retrieval, and concise grounded product answers. The current release candidate is **v2.0.0**; it has not been committed, tagged, or published. It uses a synthetic catalog and is not a storefront: there is no live inventory, checkout, account, or product photography.
+VastraAI is a fashion discovery app with authenticated conversational search, exact catalog filters, PostgreSQL full-text retrieval, optional compatible-space semantic retrieval, and concise grounded product answers. It uses a synthetic catalog and is not a storefront: there is no live inventory, checkout, or product photography.
 
 ## Screenshots
 
@@ -9,6 +9,7 @@ Captured from the running product (color swatches represent the synthetic catalo
 ## What works
 
 - Browse 750 deterministic synthetic products, inspect product details, and search in natural language.
+- Sign in with Google or a verified email and password to search. Search sessions belong to the account and persist in PostgreSQL.
 - Parse category, color, occasion, size, gender, and INR price constraints; exact filters remain authoritative.
 - Fuse pgvector and PostgreSQL full-text candidates with reciprocal-rank fusion; fall back to keyword search when semantic search is unavailable.
 - Refine a search with messages or remove active-filter chips. State revisions reject stale requests.
@@ -25,6 +26,7 @@ For hosted deployment, see the [Vercel + Render + Neon deployment guide](docs/de
 - Docker Engine with Compose (for PostgreSQL 16 + pgvector; optionally the app containers).
 - Python 3.12 and Node.js 22 with npm (for host development). The Dockerfiles use these versions.
 - Optional: a Gemini API key, or a local Ollama server and the configured generation/embedding models. Standard tests and offline evaluation use neither.
+- Google OAuth client credentials, two random auth secrets, and SMTP settings for email registration and password reset.
 
 ## Quick start (host app, Docker database)
 
@@ -42,7 +44,7 @@ cd ../frontend
 npm ci
 ```
 
-Set `GEMINI_API_KEY` in `.env` if using the default Gemini configuration. Without an available provider, catalog browsing works and search can degrade to keyword retrieval; some generation calls will first fail and fall back to deterministic parsing. To run the backend and frontend in separate terminals from the root:
+Set `NEXTAUTH_SECRET` and `AUTH_JWT_SECRET` to different random values of at least 32 characters, then configure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and the `AUTH_SMTP_*`/`AUTH_EMAIL_FROM` settings in `.env`. For host development, also put `NEXTAUTH_SECRET`, `AUTH_JWT_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` in `frontend/.env.local`; the `AUTH_JWT_SECRET` value must match the backend. Next.js does not read the root `.env` when started from `frontend/`. Register the Google OAuth callback `http://localhost:3000/api/auth/callback/google`. Email registration requires a working SMTP server. Set `GEMINI_API_KEY` if using the default Gemini configuration. To run the backend and frontend in separate terminals from the root:
 
 ```sh
 cd backend && .venv/bin/python -m uvicorn fashion_search.main:app --host 127.0.0.1 --port 8000
@@ -92,13 +94,13 @@ The dataset [`fashion_search_v1.json`](backend/evaluation/datasets/fashion_searc
 
 ## Developer observability
 
-In development, open <http://localhost:3000/dev/observability>. The backend exposes `/dev/observability/summary`, `/providers`, `/search`, and `/requests/{request_id}`; search responses also include a correlation ID. Provider/model, outcome, latency, fallback attempts, token usage when available, estimated API cost when configured, stage timings, counts, and search mode can be inspected. Raw prompts are not persisted by default. These routes are disabled for `APP_ENVIRONMENT=production`, but there is **no admin authentication**: do not expose the development dashboard publicly. `OBSERVABILITY_RETENTION_DAYS` configures retention; run `cd backend && .venv/bin/cleanup-observability` manually if no scheduler is installed.
+Set `AUTH_ADMIN_EMAILS` to a comma-separated list of verified account emails allowed to use the observability dashboard. The backend checks the signed identity and the allowlist on every dashboard request. Raw prompts are not persisted by default. `OBSERVABILITY_RETENTION_DAYS` configures retention; run `cd backend && .venv/bin/cleanup-observability` manually if no scheduler is installed.
 
 ## Known limitations and next steps
 
 - The seed has no wedding dresses; a black wedding dress request correctly yields `no_exact_matches`. Some descriptive queries are false-empty in offline keyword mode. Catalog metadata and sample size constrain quality.
-- Search sessions live in one backend process. Same-tab refresh restores the browser view while that process survives, but restart or another worker loses the session. PostgreSQL-backed sessions with expiry and atomic revisions are the next persistence milestone.
+- PostgreSQL search sessions expire after 30 days and use atomic revisions. The browser caches only a per-account view snapshot in tab storage.
 - A freshly seeded catalog has no embeddings. Semantic retrieval requires an explicit `embed-catalog` pass with a configured provider/model. The v2 evaluation run found no ready compatible index, so hybrid used its FTS fallback and semantic-only returned no products.
-- The 40-query labels and synthetic catalog are limited; no production load test or authenticated developer dashboard exists. Python runtime dependencies use minimum versions rather than a lockfile. The current full npm audit reports five high-severity advisories in development-only ESLint dependencies; production dependencies report zero findings.
+- The 40-query labels and synthetic catalog are limited; no production load test exists. Python runtime dependencies use minimum versions rather than a lockfile. The current full npm audit reports five high-severity advisories in development-only ESLint dependencies; production dependencies report zero findings.
 
-Priorities: (1) complete v2 release gates, (2) persist sessions across backend workers/restarts, (3) expand catalog and evaluation labels, and (4) measure live hybrid/RAG quality and cost. See the [v2 release checklist](docs/release-checklist.md), [v2.0.0 candidate notes](docs/releases/v2.0.0.md), and the [historical v0.1.0 candidate](docs/releases/v0.1.0.md). A version bump is not evidence of deployment.
+Priorities: (1) verify the new authentication and session flows with real OAuth/SMTP configuration, (2) expand catalog and evaluation labels, and (3) measure live hybrid/RAG quality and cost. See the historical [v2 release checklist](docs/release-checklist.md) and [v2.0.0 candidate notes](docs/releases/v2.0.0.md). A version bump is not evidence of deployment.

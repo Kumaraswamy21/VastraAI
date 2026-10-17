@@ -1,49 +1,126 @@
-"""Lightweight process-local search session storage with optimistic locking."""
+"""Durable, owner-scoped search session storage with atomic revisions."""
 
 from __future__ import annotations
 
-from threading import RLock
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
+from sqlalchemy import delete, select, update
+from sqlalchemy.orm import Session
+
+from fashion_search.catalog.models import AuthRateLimit, AuthToken, SearchSessionRecord
+from fashion_search.core.db import get_engine
 from fashion_search.search.conversation import RevisionConflictError
 from fashion_search.search.schemas import SearchState
 
+SESSION_TTL_DAYS = 30
+
 
 class SearchSessionStore:
-    """Store validated structured state; suitable for the current single-service milestone."""
+    """Persist search state and enforce account ownership at every operation."""
 
-    def __init__(self) -> None:
-        self._states: dict[str, SearchState] = {}
-        self._lock = RLock()
-
-    def create(self, state: SearchState) -> tuple[str, SearchState]:
+    def create(self, user_id: str, state: SearchState) -> tuple[str, SearchState]:
         session_id = str(uuid4())
-        with self._lock:
-            self._states[session_id] = state.model_copy(deep=True)
+        with Session(get_engine()) as session, session.begin():
+            session.add(
+                SearchSessionRecord(
+                    id=session_id,
+                    user_id=user_id,
+                    state=state.model_dump(mode="json"),
+                    expires_at=datetime.now(UTC) + timedelta(days=SESSION_TTL_DAYS),
+                )
+            )
         return session_id, state
 
-    def get(self, session_id: str) -> SearchState | None:
-        with self._lock:
-            state = self._states.get(session_id)
-            return state.model_copy(deep=True) if state else None
+    def get(self, user_id: str, session_id: str) -> SearchState | None:
+        now = datetime.now(UTC)
+        with Session(get_engine()) as session, session.begin():
+            session.execute(
+                delete(SearchSessionRecord).where(
+                    SearchSessionRecord.id == session_id,
+                    SearchSessionRecord.user_id == user_id,
+                    SearchSessionRecord.expires_at <= now,
+                )
+            )
+            row = session.scalar(
+                select(SearchSessionRecord).where(
+                    SearchSessionRecord.id == session_id,
+                    SearchSessionRecord.user_id == user_id,
+                    SearchSessionRecord.expires_at > now,
+                )
+            )
+            if row is None:
+                return None
+            row.expires_at = now + timedelta(days=SESSION_TTL_DAYS)
+            return SearchState.model_validate(row.state)
 
     def commit(
-        self, session_id: str, state: SearchState, *, expected_revision: int
+        self,
+        user_id: str,
+        session_id: str,
+        state: SearchState,
+        *,
+        expected_revision: int,
     ) -> None:
-        with self._lock:
-            current = self._states.get(session_id)
-            if current is None:
-                raise KeyError(session_id)
-            if current.revision != expected_revision:
-                raise RevisionConflictError(
-                    f"stale search state: expected revision {expected_revision}, "
-                    f"current revision is {current.revision}"
+        with Session(get_engine()) as session, session.begin():
+            result = session.execute(
+                update(SearchSessionRecord)
+                .where(
+                    SearchSessionRecord.id == session_id,
+                    SearchSessionRecord.user_id == user_id,
+                    SearchSessionRecord.expires_at > datetime.now(UTC),
+                    SearchSessionRecord.state["revision"].astext
+                    == str(expected_revision),
                 )
-            self._states[session_id] = state.model_copy(deep=True)
+                .values(
+                    state=state.model_dump(mode="json"),
+                    expires_at=datetime.now(UTC) + timedelta(days=SESSION_TTL_DAYS),
+                    updated_at=datetime.now(UTC),
+                )
+            )
+            if result.rowcount != 1:
+                exists = session.scalar(
+                    select(SearchSessionRecord.id).where(
+                        SearchSessionRecord.id == session_id,
+                        SearchSessionRecord.user_id == user_id,
+                        SearchSessionRecord.expires_at > datetime.now(UTC),
+                    )
+                )
+                if exists is None:
+                    raise KeyError(session_id)
+                raise RevisionConflictError("stale search state")
 
-    def clear(self) -> None:
-        with self._lock:
-            self._states.clear()
+    def cleanup(self) -> dict[str, int]:
+        """Remove expired sessions, one-time tokens, and old throttle counters."""
+        now = datetime.now(UTC)
+        with Session(get_engine()) as session, session.begin():
+            sessions = (
+                session.execute(
+                    delete(SearchSessionRecord).where(
+                        SearchSessionRecord.expires_at <= now
+                    )
+                ).rowcount
+                or 0
+            )
+            tokens = (
+                session.execute(
+                    delete(AuthToken).where(AuthToken.expires_at <= now)
+                ).rowcount
+                or 0
+            )
+            limits = (
+                session.execute(
+                    delete(AuthRateLimit).where(
+                        AuthRateLimit.window_start < now - timedelta(days=1)
+                    )
+                ).rowcount
+                or 0
+            )
+        return {
+            "search_sessions": sessions,
+            "auth_tokens": tokens,
+            "auth_rate_limits": limits,
+        }
 
 
 search_session_store = SearchSessionStore()

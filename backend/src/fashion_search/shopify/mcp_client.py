@@ -86,6 +86,11 @@ class ShopifyMcpClient:
         profile = self.settings.shopify_agent_profile_url
         if not profile:
             raise ShopifyMcpError("Shopify UCP agent profile URL is not configured")
+        if (
+            not self.settings.shopify_client_id
+            or not self.settings.shopify_client_secret
+        ):
+            raise ShopifyMcpError("Shopify client credentials are not configured")
 
         destination = (country or self.settings.shopify_catalog_country).upper()
         context = {"address_country": destination}
@@ -159,7 +164,7 @@ class ShopifyMcpClient:
                     },
                     headers={"Content-Type": "application/json"},
                 )
-                self._check_status(token_response)
+                self._check_status(token_response, stage="token endpoint")
                 token = token_response.json().get("access_token")
                 if not isinstance(token, str) or not token:
                     raise ShopifyMcpProtocolError(
@@ -169,7 +174,7 @@ class ShopifyMcpClient:
             response = self._client.post(
                 self.settings.shopify_mcp_url, json=payload, headers=headers
             )
-            self._check_status(response)
+            self._check_status(response, stage="catalog endpoint")
             try:
                 envelope = response.json()
             except (ValueError, json.JSONDecodeError) as exc:
@@ -188,7 +193,7 @@ class ShopifyMcpClient:
         return envelope
 
     @staticmethod
-    def _check_status(response: httpx.Response) -> None:
+    def _check_status(response: httpx.Response, *, stage: str) -> None:
         if response.status_code == 429:
             raise ShopifyMcpRateLimitError(
                 "Shopify MCP rate limit reached",
@@ -198,5 +203,5 @@ class ShopifyMcpClient:
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
             raise ShopifyMcpError(
-                f"Shopify MCP returned HTTP {response.status_code}"
+                f"Shopify {stage} returned HTTP {response.status_code}"
             ) from exc

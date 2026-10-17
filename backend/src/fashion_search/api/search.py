@@ -5,7 +5,7 @@ import time
 from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from fashion_search.generation.router import GenerationRouter
@@ -43,6 +43,8 @@ from fashion_search.search.constraints import (
 from fashion_search.search.hybrid import HybridSearchError, hybrid_search
 from fashion_search.search.preprocess import build_retrieval_query
 from fashion_search.search.sessions import search_session_store
+from fashion_search.auth.security import current_user
+from fashion_search.catalog.models import User
 from fashion_search.search.semantic import SemanticSearchError, semantic_search
 from fashion_search.rag.service import generate_grounded_answer, needs_grounded_answer
 from fashion_search.rag.shopify import generate_shopify_grounded_answer
@@ -160,6 +162,7 @@ class ConversationalSearchResponse(HybridSearchResponse):
 def search_catalog(
     body: SearchRequest,
     provider: Literal["local", "shopify"] = Query(default="local"),
+    user: User = Depends(current_user),
 ) -> ConversationalSearchResponse | ShopifyConversationalSearchResponse:
     """Create or refine structured state, then execute the existing hybrid search."""
     if provider == "shopify":
@@ -171,12 +174,12 @@ def search_catalog(
         try:
             if not body.session_id:
                 state = initial_search_state(message)
-                session_id, state = search_session_store.create(state)
+                session_id, state = search_session_store.create(user.id, state)
                 interpreted_as: Literal["initial", "refinement", "new_search"] = (
                     "initial"
                 )
             else:
-                current = search_session_store.get(body.session_id)
+                current = search_session_store.get(user.id, body.session_id)
                 if current is None:
                     raise HTTPException(
                         status_code=404, detail="search session not found"
@@ -271,11 +274,17 @@ def search_catalog(
                     "invalid_product_reference": rag_result.invalid_product_reference,
                 }
             if body.session_id:
-                search_session_store.commit(
-                    session_id,
-                    state,
-                    expected_revision=state.revision - 1,
-                )
+                try:
+                    search_session_store.commit(
+                        user.id,
+                        session_id,
+                        state,
+                        expected_revision=state.revision - 1,
+                    )
+                except KeyError as exc:
+                    raise HTTPException(
+                        status_code=404, detail="search session not found"
+                    ) from exc
             pagination = content.get("pagination")
             return ShopifyConversationalSearchResponse(
                 query=state.original_query,
@@ -334,11 +343,11 @@ def search_catalog(
         if not body.session_id:
             message = body.query or body.message or ""
             state = initial_search_state(message)
-            session_id, state = search_session_store.create(state)
+            session_id, state = search_session_store.create(user.id, state)
             interpreted_as: Literal["initial", "refinement", "new_search"] = "initial"
         else:
             session_id = body.session_id
-            current = search_session_store.get(session_id)
+            current = search_session_store.get(user.id, session_id)
             if current is None:
                 raise HTTPException(status_code=404, detail="search session not found")
             message = body.message or "Updated filters"
@@ -406,9 +415,14 @@ def search_catalog(
         if body.session_id and session_id:
             # Only commit after retrieval has completed so a failed refinement
             # cannot advance the authoritative revision without new results.
-            search_session_store.commit(
-                session_id, state, expected_revision=state.revision - 1
-            )
+            try:
+                search_session_store.commit(
+                    user.id, session_id, state, expected_revision=state.revision - 1
+                )
+            except KeyError as exc:
+                raise HTTPException(
+                    status_code=404, detail="search session not found"
+                ) from exc
         result_payload = (
             result.model_dump() if hasattr(result, "model_dump") else vars(result)
         )
@@ -455,7 +469,9 @@ def search_catalog(
 
 
 @router.post("/hybrid", response_model=HybridSearchResponse)
-def search_hybrid(body: HybridSearchRequest) -> HybridSearchResponse:
+def search_hybrid(
+    body: HybridSearchRequest, _user: User = Depends(current_user)
+) -> HybridSearchResponse:
     """Explicit hybrid search endpoint (same behavior as POST /search)."""
     started = time.perf_counter()
     identifier = request_id()
@@ -569,7 +585,9 @@ def _shopify_retrieval_query(state: SearchState) -> str:
 
 
 @router.post("/semantic", response_model=SemanticSearchResponse)
-def search_semantic(body: SemanticSearchRequest) -> SemanticSearchResponse:
+def search_semantic(
+    body: SemanticSearchRequest, _user: User = Depends(current_user)
+) -> SemanticSearchResponse:
     """Rank products by configured query embedding + pgvector cosine similarity."""
     try:
         return semantic_search(body)
@@ -578,6 +596,8 @@ def search_semantic(body: SemanticSearchRequest) -> SemanticSearchResponse:
 
 
 @router.post("/parse", response_model=ConstraintParseResponse)
-def parse_search_constraints(body: ConstraintParseRequest) -> ConstraintParseResponse:
+def parse_search_constraints(
+    body: ConstraintParseRequest, _user: User = Depends(current_user)
+) -> ConstraintParseResponse:
     """Extract query constraints without applying them to retrieval."""
     return parse_constraints(body.query)

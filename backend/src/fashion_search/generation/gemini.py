@@ -69,11 +69,12 @@ class GeminiGenerator(AsyncGenerationMixin):
     def generate(self, prompt: str, *, system_prompt: str | None = None) -> str:
         from google.genai import types
 
+        sampling = (
+            {} if self.model_name.startswith("gemini-3.") else {"temperature": 0.0}
+        )
         response = self._call(
             prompt,
-            types.GenerateContentConfig(
-                system_instruction=system_prompt, temperature=0.0
-            ),
+            types.GenerateContentConfig(system_instruction=system_prompt, **sampling),
         )
         text = (getattr(response, "text", None) or "").strip()
         if not text:
@@ -85,13 +86,16 @@ class GeminiGenerator(AsyncGenerationMixin):
     ) -> T:
         from google.genai import types
 
+        sampling = (
+            {} if self.model_name.startswith("gemini-3.") else {"temperature": 0.0}
+        )
         response = self._call(
             prompt,
             types.GenerateContentConfig(
                 system_instruction=system_prompt,
-                temperature=0.0,
                 response_mime_type="application/json",
                 response_schema=schema,
+                **sampling,
             ),
         )
         try:
@@ -136,9 +140,12 @@ class GeminiGenerator(AsyncGenerationMixin):
             except Exception as exc:
                 mapped = _translate(exc)
                 logger.warning(
-                    "generation_failure provider=%s error_type=%s attempt=%s",
+                    "generation_failure provider=%s model=%s error_type=%s api_code=%s api_status=%s attempt=%s",
                     self.name,
+                    self.model_name,
                     type(mapped).__name__,
+                    getattr(exc, "code", None),
+                    getattr(exc, "status", None),
                     attempt + 1,
                 )
                 if attempt >= max_retries or not isinstance(

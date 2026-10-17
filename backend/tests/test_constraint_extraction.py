@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from fashion_search.api.search import router
+from auth_helpers import authorize
 from fashion_search.search.constraints import (
     GeminiConstraintExtractor,
     fallback_parse,
@@ -252,6 +253,7 @@ class ParseApiTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         app = FastAPI()
         app.include_router(router)
+        authorize(app)
         cls.client = TestClient(app)
 
     def test_empty_and_whitespace_queries_are_rejected(self) -> None:

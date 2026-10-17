@@ -7,16 +7,20 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from fashion_search.config.settings import Settings, get_settings
 from fashion_search.observability.repository import repository
+from fashion_search.auth.security import admin_user
+from fashion_search.catalog.models import User
 
 router = APIRouter(prefix="/dev/observability", tags=["developer-observability"])
 Range = Literal["1h", "24h", "7d"]
 
 
-def require_dashboard(settings: Settings = Depends(get_settings)) -> None:
+def require_dashboard(
+    settings: Settings = Depends(get_settings),
+    _user: User = Depends(admin_user),
+) -> None:
     if (
         not settings.observability_enabled
         or not settings.observability_dashboard_enabled
-        or settings.app_environment == "production"
     ):
         raise HTTPException(status_code=404, detail="Not found")
 

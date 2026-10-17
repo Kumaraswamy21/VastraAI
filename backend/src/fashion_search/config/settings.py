@@ -16,6 +16,17 @@ class Settings(BaseSettings):
     )
 
     database_url: str
+    auth_jwt_secret: str = ""
+    auth_jwt_issuer: str = "vastraai-web"
+    auth_jwt_audience: str = "vastraai-api"
+    auth_admin_emails: str = ""
+    auth_email_from: str = ""
+    auth_smtp_host: str = ""
+    auth_smtp_port: int = Field(default=587, ge=1, le=65535)
+    auth_smtp_username: str = ""
+    auth_smtp_password: str = ""
+    auth_smtp_starttls: bool = True
+    auth_frontend_url: str = "http://localhost:3000"
     gemini_api_key: str = ""
     google_api_key: str = ""
     generation_provider: str = Field(default="gemini", pattern=r"^(gemini|ollama)$")
@@ -78,6 +89,13 @@ class Settings(BaseSettings):
     @classmethod
     def blank_fallback_is_disabled(cls, value: object) -> object:
         return None if value == "" else value
+
+    @field_validator("auth_jwt_secret")
+    @classmethod
+    def sufficiently_long_auth_secret(cls, value: str) -> str:
+        if value and len(value) < 32:
+            raise ValueError("AUTH_JWT_SECRET must be at least 32 characters")
+        return value
 
     @model_validator(mode="after")
     def validate_search_quality_thresholds(self) -> "Settings":

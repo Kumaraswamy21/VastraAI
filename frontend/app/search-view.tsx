@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ApiError,
@@ -12,7 +13,7 @@ import {
   type ShopifySearchResponse,
 } from "@/lib/api";
 import { formatInr, swatchForColor } from "@/lib/color-swatch";
-import { restoreSnapshot, saveSnapshot, type ConversationMessage } from "@/lib/search-session";
+import { restoreSnapshot, saveSnapshot, searchSessionKey, type ConversationMessage } from "@/lib/search-session";
 import { ShopifyProductsGrid } from "@/app/shopify-search-panel";
 import { ShopifyChatPanel, type ShopifyChatMessage } from "@/app/shopify-chat-panel";
 
@@ -143,10 +144,11 @@ function filterSummary(data: ConversationalSearchResponse): string {
   return parts.length ? parts.join(" ") : data.state.current_query;
 }
 
-export function SearchView() {
+export function SearchView({ userId, initialQuery = "" }: { userId: string; initialQuery?: string }) {
+  const storageKey = searchSessionKey(userId);
   const [draft, setDraft] = useState("");
   const [view, setView] = useState<ViewState>(initialState);
-  const [provider, setProvider] = useState<"local" | "shopify">("shopify");
+  const [provider, setProvider] = useState<"local" | "shopify">(initialQuery ? "local" : "shopify");
   const [shopifyResult, setShopifyResult] = useState<ShopifySearchResponse | null>(null);
   const [shopifyMessages, setShopifyMessages] = useState<ShopifyChatMessage[]>([]);
   const [shopifyPriceMin, setShopifyPriceMin] = useState("");
@@ -157,20 +159,21 @@ export function SearchView() {
   const transcriptRef = useRef<HTMLDivElement>(null);
   const shouldFollowRef = useRef(true);
   const inFlightRef = useRef(false);
+  const initialSearchStartedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const saved = restoreSnapshot(window.sessionStorage);
+    const saved = initialQuery ? null : restoreSnapshot(window.sessionStorage, storageKey);
     const frame = window.requestAnimationFrame(() => {
       if (saved) setView({ status: "ready", data: saved.data, messages: saved.messages, error: null });
       setHydrated(true);
     });
     return () => window.cancelAnimationFrame(frame);
-  }, []);
+  }, [storageKey, initialQuery]);
 
   useEffect(() => {
     if (!hydrated) return;
-    try { saveSnapshot(window.sessionStorage, view.data, view.messages); } catch { /* storage may be unavailable */ }
-  }, [view.data, view.messages, hydrated]);
+    try { saveSnapshot(window.sessionStorage, view.data, view.messages, storageKey); } catch { /* storage may be unavailable */ }
+  }, [view.data, view.messages, hydrated, storageKey]);
 
   useEffect(() => {
     const container = transcriptRef.current;
@@ -245,13 +248,24 @@ export function SearchView() {
       setView((previous) => ({ status: "ready", data, error: null, messages: [...previous.messages, assistantMessage] }));
       setConversationOpen(true);
     } catch (error: unknown) {
+      if (error instanceof ApiError && error.status === 401) {
+        window.sessionStorage.removeItem(storageKey);
+        await signOut({ callbackUrl: "/sign-in" });
+        return;
+      }
       const message = error instanceof ApiError ? error.message : error instanceof Error ? error.message : "Your search could not be updated.";
       // Preserve the attempted turn in the transcript while the confirmed state and products remain intact.
       setView((previous) => ({ ...previous, status: "ready", error: message }));
     } finally {
       inFlightRef.current = false;
     }
-  }, [view.data, provider, shopifyResult]);
+  }, [view.data, provider, shopifyResult, storageKey]);
+
+  useEffect(() => {
+    if (!hydrated || !initialQuery.trim() || initialSearchStartedRef.current === initialQuery) return;
+    initialSearchStartedRef.current = initialQuery;
+    void execute(initialQuery);
+  }, [hydrated, initialQuery, execute]);
 
   function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
@@ -299,6 +313,7 @@ export function SearchView() {
           <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="VastraAI home">
             <SearchMark /><span className="font-serif text-xl tracking-tight">VastraAI</span>
           </Link>
+          <button type="button" onClick={() => { window.sessionStorage.removeItem(storageKey); signOut({ callbackUrl: "/sign-in" }); }} className="text-xs text-stone-600 underline underline-offset-2">Sign out</button>
           <form onSubmit={onSubmit} className="ml-auto flex min-w-0 max-w-3xl flex-1 items-center rounded-full border border-stone-300 bg-white px-4 shadow-sm focus-within:border-stone-500 focus-within:ring-2 focus-within:ring-stone-200">
             <label htmlFor="search-provider" className="sr-only">Search provider</label>
             <select

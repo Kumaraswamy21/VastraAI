@@ -75,6 +75,8 @@ class ShopifyMcpClientTests(unittest.TestCase):
 
         def handler(request: httpx.Request) -> httpx.Response:
             captured.append(request)
+            if request.url.host == "auth.test":
+                return httpx.Response(200, json={"access_token": "short-lived-token"})
             return httpx.Response(
                 200,
                 json={
@@ -84,16 +86,21 @@ class ShopifyMcpClientTests(unittest.TestCase):
                 },
             )
 
+        cfg = settings(
+            shopify_token_url="https://auth.test/access_token",
+            shopify_client_id="client-id",
+            shopify_client_secret="client-secret",
+        )
         transport = httpx.Client(transport=httpx.MockTransport(handler))
-        with ShopifyMcpClient(settings(), client=transport) as mcp:
+        with ShopifyMcpClient(cfg, client=transport) as mcp:
             result = mcp.search_catalog(
                 "blue cotton kurta under INR 1500",
                 limit=5,
                 filters={"available": True},
             )
         self.assertEqual(result, response_body)
-        request = captured[0]
-        self.assertNotIn("authorization", request.headers)
+        request = captured[1]
+        self.assertEqual(request.headers["authorization"], "Bearer short-lived-token")
         body = __import__("json").loads(request.read())
         self.assertEqual(body["method"], "tools/call")
         self.assertEqual(body["params"]["name"], "search_catalog")
@@ -162,12 +169,21 @@ class ShopifyMcpClientTests(unittest.TestCase):
             {"jsonrpc": "2.0", "id": 1, "error": {"message": "invalid"}},
             {"jsonrpc": "2.0", "id": 1, "result": {"isError": True}},
         ):
-            client = httpx.Client(
-                transport=httpx.MockTransport(
-                    lambda _: httpx.Response(200, json=envelope)
-                )
+
+            def handler(request: httpx.Request) -> httpx.Response:
+                if request.url.host == "auth.test":
+                    return httpx.Response(
+                        200, json={"access_token": "short-lived-token"}
+                    )
+                return httpx.Response(200, json=envelope)
+
+            cfg = settings(
+                shopify_token_url="https://auth.test/access_token",
+                shopify_client_id="client-id",
+                shopify_client_secret="client-secret",
             )
-            with ShopifyMcpClient(settings(), client=client) as mcp:
+            client = httpx.Client(transport=httpx.MockTransport(handler))
+            with ShopifyMcpClient(cfg, client=client) as mcp:
                 if "error" in envelope:
                     with self.assertRaises(ShopifyMcpProtocolError):
                         mcp.list_tools()
@@ -192,6 +208,11 @@ class ShopifyMcpClientTests(unittest.TestCase):
         ) as mcp:
             with self.assertRaises(ShopifyMcpError):
                 mcp.list_tools()
+        with ShopifyMcpClient(settings(), client=client) as mcp:
+            with self.assertRaisesRegex(
+                ShopifyMcpError, "Shopify client credentials are not configured"
+            ):
+                mcp.search_catalog("kurta")
         client.close()
 
 
