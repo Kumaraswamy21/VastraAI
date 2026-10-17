@@ -23,6 +23,43 @@ from fashion_search.observability.schemas import AIUsage
 T = TypeVar("T", bound=BaseModel)
 logger = get_logger(__name__)
 
+_GEMINI_JSON_SCHEMA_KEYS = frozenset(
+    {
+        "$defs",
+        "$ref",
+        "additionalProperties",
+        "anyOf",
+        "description",
+        "enum",
+        "items",
+        "maxItems",
+        "maximum",
+        "minItems",
+        "minimum",
+        "oneOf",
+        "prefixItems",
+        "properties",
+        "required",
+        "title",
+        "type",
+    }
+)
+
+
+def _supported_json_schema(value: Any, *, named_entries: bool = False) -> Any:
+    """Keep only Gemini's documented schema keywords; validate locally afterward."""
+    if isinstance(value, list):
+        return [_supported_json_schema(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+    if named_entries:
+        return {name: _supported_json_schema(item) for name, item in value.items()}
+    return {
+        key: _supported_json_schema(item, named_entries=key in {"properties", "$defs"})
+        for key, item in value.items()
+        if key in _GEMINI_JSON_SCHEMA_KEYS
+    }
+
 
 class GeminiGenerator(AsyncGenerationMixin):
     """Google Gemini completions. Satisfies `GenerationProvider`."""
@@ -89,12 +126,17 @@ class GeminiGenerator(AsyncGenerationMixin):
         sampling = (
             {} if self.model_name.startswith("gemini-3.") else {"temperature": 0.0}
         )
+        structured_config = (
+            {"response_json_schema": _supported_json_schema(schema.model_json_schema())}
+            if self.model_name.startswith("gemini-3.")
+            else {"response_schema": schema}
+        )
         response = self._call(
             prompt,
             types.GenerateContentConfig(
                 system_instruction=system_prompt,
                 response_mime_type="application/json",
-                response_schema=schema,
+                **structured_config,
                 **sampling,
             ),
         )
@@ -139,13 +181,20 @@ class GeminiGenerator(AsyncGenerationMixin):
                 raise
             except Exception as exc:
                 mapped = _translate(exc)
+                api_message = getattr(exc, "message", None)
+                if isinstance(api_message, str):
+                    api_message = " ".join(api_message.split())[:300]
                 logger.warning(
-                    "generation_failure provider=%s model=%s error_type=%s api_code=%s api_status=%s attempt=%s",
+                    "generation_failure provider=%s model=%s mode=%s error_type=%s api_code=%s api_status=%s api_message=%s attempt=%s",
                     self.name,
                     self.model_name,
+                    "structured"
+                    if getattr(config, "response_mime_type", None)
+                    else "text",
                     type(mapped).__name__,
                     getattr(exc, "code", None),
                     getattr(exc, "status", None),
+                    api_message,
                     attempt + 1,
                 )
                 if attempt >= max_retries or not isinstance(

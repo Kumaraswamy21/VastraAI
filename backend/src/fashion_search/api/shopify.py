@@ -28,8 +28,7 @@ def search_shopify(
             503
             if not settings.shopify_catalog_enabled
             or not settings.shopify_agent_profile_url
-            or not settings.shopify_client_id
-            or not settings.shopify_client_secret
+            or bool(settings.shopify_client_id) != bool(settings.shopify_client_secret)
             else 502
         )
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc
