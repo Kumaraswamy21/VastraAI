@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any
 
 import httpx
 
 from fashion_search.config.settings import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class ShopifyMcpError(Exception):
@@ -193,6 +196,13 @@ class ShopifyMcpClient:
             raise ShopifyMcpRateLimitError(
                 "Shopify MCP rate limit reached",
                 retry_after=response.headers.get("Retry-After"),
+            )
+        if stage == "catalog endpoint" and response.status_code == 403:
+            logger.warning(
+                "shopify_catalog_forbidden request_id=%s content_type=%s body=%r",
+                response.headers.get("x-request-id"),
+                response.headers.get("content-type"),
+                response.text[:1000],
             )
         try:
             response.raise_for_status()
