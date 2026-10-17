@@ -86,11 +86,6 @@ class ShopifyMcpClient:
         profile = self.settings.shopify_agent_profile_url
         if not profile:
             raise ShopifyMcpError("Shopify UCP agent profile URL is not configured")
-        if (
-            not self.settings.shopify_client_id
-            or not self.settings.shopify_client_secret
-        ):
-            raise ShopifyMcpError("Shopify client credentials are not configured")
 
         destination = (country or self.settings.shopify_catalog_country).upper()
         context = {"address_country": destination}

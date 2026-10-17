@@ -25,10 +25,12 @@ def _get_access_token(
     transport: httpx.Client,
     *,
     settings: Settings,
-) -> str:
-    """Exchange Shopify client credentials and reuse the short-lived token."""
-    if not settings.shopify_client_id or not settings.shopify_client_secret:
-        raise ShopifyMcpError("Shopify client credentials are not configured")
+) -> str | None:
+    """Return an optional token, reusing it when credentials are configured."""
+    if bool(settings.shopify_client_id) != bool(settings.shopify_client_secret):
+        raise ShopifyMcpError("Both Shopify client ID and secret are required")
+    if not settings.shopify_client_id:
+        return None
     key = (settings.shopify_client_id, settings.shopify_client_secret)
     now = time.monotonic()
     with _TOKEN_CACHE_LOCK:
@@ -111,14 +113,16 @@ def search_global_catalog(
     transport = client or httpx.Client(timeout=settings.shopify_mcp_timeout_seconds)
     try:
         access_token = _get_access_token(transport, settings=settings)
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+        }
+        if access_token:
+            headers["Authorization"] = f"Bearer {access_token}"
         response = transport.post(
             settings.shopify_mcp_url,
             json=payload,
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json, text/event-stream",
-                "Authorization": f"Bearer {access_token}",
-            },
+            headers=headers,
         )
         response.raise_for_status()
         envelope = _response_json(response)

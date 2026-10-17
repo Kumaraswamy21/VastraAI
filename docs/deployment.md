@@ -40,8 +40,8 @@ Search sessions are stored in PostgreSQL and can be served by multiple backend i
 | `OLLAMA_EMBEDDING_MODEL` | Ollama embedding model |
 | `OLLAMA_EMBEDDING_DIMENSIONS` | Output dimension of the selected Ollama embedding model |
 | `SHOPIFY_CATALOG_ENABLED` | Set `true` to enable the separate Shopify search endpoint |
-| `SHOPIFY_CLIENT_ID` | Shopify Dev Dashboard Catalogs API client ID; its token must include `read_global_api_catalog_search` |
-| `SHOPIFY_CLIENT_SECRET` | Shopify Dev Dashboard Catalogs API client secret; keep secret |
+| `SHOPIFY_CLIENT_ID` | Optional Shopify Dev Dashboard Catalogs API client ID; leave blank with the secret for keyless access |
+| `SHOPIFY_CLIENT_SECRET` | Optional Shopify Dev Dashboard Catalogs API client secret; leave blank with the ID for keyless access |
 | `SHOPIFY_AGENT_PROFILE_URL` | HTTPS URL for a UCP agent profile with catalog search and Shopify Global Catalog capabilities |
 | `SHOPIFY_MCP_URL` | Global Catalog MCP endpoint; defaults to Shopify's endpoint |
 | `SHOPIFY_TOKEN_URL` | OAuth token endpoint; defaults to Shopify's endpoint |
@@ -51,7 +51,7 @@ Search sessions are stored in PostgreSQL and can be served by multiple backend i
 
 Only set the provider-specific values you use. If Neon has IP restrictions enabled, allow connections from the Render service's outbound IP addresses.
 
-Shopify search is disabled unless explicitly enabled with client credentials and an agent profile URL. Product data is returned live and is not persisted by this app. Shopify search results must not be cached; product images are loaded directly from Shopify and shown with their merchant product link. The backend caches only the access token in process memory and refreshes it before its documented 60-minute expiry.
+Shopify search is disabled unless explicitly enabled with an agent profile URL. With both client credentials blank, the app sends anonymous requests without an Authorization header. Shopify applies its lowest rate limits to that tier and advises against anonymous production traffic. When both credentials are configured, the backend caches only the access token in process memory and refreshes it before its documented 60-minute expiry. Product data is returned live and is not persisted by this app. Shopify search results must not be cached; product images are loaded directly from Shopify and shown with their merchant product link.
 
 After the first deploy and successful migration, run `seed-catalog` once if the database has not already been seeded. This loads the repo's 750 synthetic products into Neon. The seed is idempotent for an already seeded catalog. On a plan without a service shell, run the command against the same Neon database from a trusted local checkout or CI job.
 
@@ -82,7 +82,7 @@ If the page shows `Backend: error. Database: unknown. Failed to fetch`, check th
 - If Google sign-in fails, check that `NEXTAUTH_URL` and the Google authorized redirect URI use the same HTTPS origin and end in `/api/auth/callback/google`.
 - If Vercel logs show `[next-auth][error][OAUTH_CALLBACK_HANDLER_ERROR] fetch failed`, check that `BACKEND_API_URL` is set in Vercel's **Production** environment to the public Render HTTPS origin. Open `<BACKEND_API_URL>/health` from outside Render and confirm it responds. Google sign-in calls `/auth/google` on that backend before a session is created; the new log message distinguishes an unreachable backend from an HTTP rejection.
 - If email registration returns HTTP 503, configure Render's `AUTH_EMAIL_FROM` and `AUTH_SMTP_*` settings.
-- If Shopify returns HTTP 403, check the backend log after deploying this version: it distinguishes the token endpoint from the catalog endpoint. Check the Catalogs API client scope, the public agent profile, and the configured `SHOPIFY_MCP_URL`.
+- If Shopify returns HTTP 403, check the backend log after deploying this version: it distinguishes the token endpoint from the catalog endpoint. For keyless access, leave both client credentials blank and check the public agent profile. For authenticated access, check the Catalogs API client scope, the public agent profile, and the configured `SHOPIFY_MCP_URL`.
 - If Gemini generation returns HTTP 400, inspect the new `api_code` and `api_status` fields in Render logs. Gemini 3.x requests in this version omit deprecated sampling parameters; remaining 400s need their API status and a redacted error reason to diagnose.
 
 Open `https://<your-render-service>.onrender.com/health` directly. It should return JSON with `backend` and `database` fields. If it returns `database: "error"`, check Render's `DATABASE_URL`, Neon connectivity, and whether migrations ran. If the direct health URL works but the frontend still fails, check Vercel's server logs and `BACKEND_API_URL`.
