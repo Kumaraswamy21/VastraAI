@@ -1,6 +1,7 @@
 import type { ConversationalSearchResponse } from "./api";
 
 export const SEARCH_SESSION_KEY = "vastraai-search-v1";
+export function searchSessionKey(userId: string): string { return `${SEARCH_SESSION_KEY}:${userId}`; }
 
 export type ConversationMessage = {
   id: string;
@@ -14,9 +15,9 @@ export type SearchSnapshot = {
   messages: ConversationMessage[];
 };
 
-export function restoreSearch(storage: Pick<Storage, "getItem">): ConversationalSearchResponse | null {
+export function restoreSearch(storage: Pick<Storage, "getItem">, key = SEARCH_SESSION_KEY): ConversationalSearchResponse | null {
   try {
-    const raw = storage.getItem(SEARCH_SESSION_KEY);
+    const raw = storage.getItem(key);
     if (!raw) return null;
     const value: unknown = JSON.parse(raw);
     if (
@@ -36,18 +37,19 @@ export function restoreSearch(storage: Pick<Storage, "getItem">): Conversational
 export function saveSearch(
   storage: Pick<Storage, "setItem" | "removeItem">,
   data: ConversationalSearchResponse | null,
+  key = SEARCH_SESSION_KEY,
 ): void {
-  if (data) storage.setItem(SEARCH_SESSION_KEY, JSON.stringify(data));
-  else storage.removeItem(SEARCH_SESSION_KEY);
+  if (data) storage.setItem(key, JSON.stringify(data));
+  else storage.removeItem(key);
 }
 
-export function restoreSnapshot(storage: Pick<Storage, "getItem">): SearchSnapshot | null {
+export function restoreSnapshot(storage: Pick<Storage, "getItem">, key = SEARCH_SESSION_KEY): SearchSnapshot | null {
   try {
-    const raw = storage.getItem(SEARCH_SESSION_KEY);
+    const raw = storage.getItem(key);
     if (!raw) return null;
     const value: unknown = JSON.parse(raw);
     if (typeof value !== "object" || value === null || !("data" in value) || !("messages" in value)) {
-      const legacy = restoreSearch(storage);
+      const legacy = restoreSearch(storage, key);
       return legacy ? { data: legacy, messages: [] } : null;
     }
     const snapshot = value as SearchSnapshot;
@@ -64,7 +66,8 @@ export function saveSnapshot(
   storage: Pick<Storage, "setItem" | "removeItem">,
   data: ConversationalSearchResponse | null,
   messages: ConversationMessage[],
+  key = SEARCH_SESSION_KEY,
 ): void {
-  if (data) storage.setItem(SEARCH_SESSION_KEY, JSON.stringify({ data, messages }));
-  else storage.removeItem(SEARCH_SESSION_KEY);
+  if (data) storage.setItem(key, JSON.stringify({ data, messages }));
+  else storage.removeItem(key);
 }

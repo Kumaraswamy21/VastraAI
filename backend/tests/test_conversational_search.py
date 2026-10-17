@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import unittest
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
@@ -30,6 +31,7 @@ from fashion_search.search.schemas import (
     SearchState,
 )
 from fashion_search.search.sessions import search_session_store
+from auth_helpers import TEST_USER_ID, authorize, clear_test_sessions, ensure_test_user
 
 
 def state(**overrides: object) -> SearchState:
@@ -186,15 +188,20 @@ class ActiveFilterTests(unittest.TestCase):
         self.assertTrue(all(item.removable for item in filters))
 
 
+@unittest.skipUnless(
+    os.environ.get("DATABASE_URL"), "DATABASE_URL required for durable sessions"
+)
 class SearchApiTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         app = FastAPI()
         app.include_router(router)
+        authorize(app)
         cls.client = TestClient(app)
 
     def setUp(self) -> None:
-        search_session_store.clear()
+        ensure_test_user()
+        clear_test_sessions()
 
     @staticmethod
     def empty_result(query: str = "dress") -> HybridSearchResponse:
@@ -253,7 +260,7 @@ class SearchApiTests(unittest.TestCase):
             self.assertIsNone(removed.json()["state"]["constraints"]["occasion"])
 
     def test_stale_request_gets_conflict(self) -> None:
-        session_id, _ = search_session_store.create(state(revision=4))
+        session_id, _ = search_session_store.create(TEST_USER_ID, state(revision=4))
         with patch(
             "fashion_search.api.search.hybrid_search", return_value=self.empty_result()
         ):

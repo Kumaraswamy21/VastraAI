@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
+from auth_helpers import authorize
 from pydantic import ValidationError
 
 from fashion_search.embeddings.errors import (
@@ -301,6 +302,8 @@ class PgvectorSearchTests(unittest.TestCase):
     def test_semantic_endpoint_with_mocked_gemini(self) -> None:
         from fashion_search.main import app
 
+        authorize(app)
+        self.addCleanup(app.dependency_overrides.clear)
         client = TestClient(app)
         query_vector = self.vectors[self.product_ids[0]]
         with patch("fashion_search.search.semantic.get_embedding_provider") as build:
@@ -321,6 +324,8 @@ class PgvectorSearchTests(unittest.TestCase):
     def test_endpoint_rejects_empty_query(self) -> None:
         from fashion_search.main import app
 
+        authorize(app)
+        self.addCleanup(app.dependency_overrides.clear)
         client = TestClient(app)
         response = client.post("/search/semantic", json={"query": "  "})
         self.assertEqual(response.status_code, 422)

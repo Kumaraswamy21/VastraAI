@@ -27,6 +27,8 @@ pnpm-debug.log*
 .env.*.local
 !.env.example
 /addedenv
+/LOCAL_AUTH_CONVERSATION.md
+/docs/production-env.md
 
 # OS / IDE
 .DS_Store

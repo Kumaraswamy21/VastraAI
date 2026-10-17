@@ -1,6 +1,6 @@
 # VastraAI architecture
 
-The Next.js App Router frontend calls the FastAPI API. SQLAlchemy accesses one PostgreSQL database containing products, pgvector embeddings, a weighted full-text `tsvector`, and observability events. Alembic owns schema changes. The seeded catalog has 750 deterministic synthetic products; it has no product photography, only color swatches in the current UI.
+The Next.js App Router frontend uses Auth.js for Google and verified email/password sign-in. Browser API calls pass through same-origin Next.js route handlers, which attach short-lived signed identity tokens to FastAPI requests. SQLAlchemy accesses one PostgreSQL database containing users, owner-scoped search sessions, products, pgvector embeddings, a weighted full-text `tsvector`, and observability events. Alembic owns schema changes. The seeded catalog has 750 deterministic synthetic products; it has no product photography, only color swatches in the current UI.
 
 ```text
 User query or conversation turn
@@ -24,7 +24,7 @@ RAG consumes only the final products returned by the current search. Context is 
 
 `SearchState` owns the current constraints, original/current query, semantic query/modifiers, sort order, and revision. A follow-up interpreter returns only `SET`, `REMOVE`, or comparative changes; the deterministic reducer validates the full next state and preserves unmentioned fields. Structured chip removal uses the same reducer. Clients supply `expected_revision`; stale updates receive HTTP 409. “Cheaper” sorts ascending without inventing a price cap. A clearly different category can reset incompatible context.
 
-The API's session store is **process-local memory**. The browser also keeps the latest response in `sessionStorage`, so same-tab refresh and product-page navigation restore its view while that backend process remains alive. A backend restart or routing to another worker invalidates that session (HTTP 404); browser storage is not durable server state. Do not deploy multiple backend workers expecting shared conversations.
+The API stores `SearchState` in PostgreSQL with a user owner, 30-day sliding expiry, and atomic revision updates. A session ID belonging to another user returns HTTP 404; stale revisions return HTTP 409. The browser keeps a per-account view snapshot in `sessionStorage` for same-tab restoration; it is not authoritative.
 
 ## Provider boundary and vector compatibility
 
@@ -36,6 +36,6 @@ When enabled, `POST /search/shopify` calls Shopify Global Catalog MCP as a separ
 
 ## Observability and evaluation
 
-Provider and search events share a request correlation ID. They record operational metadata, retrieval and RAG timings, context count/size, generation provider/model, grounding failures, results, and token usage when available, without storing prompts by default. Telemetry writes fail open. Developer API routes under `/dev/observability` are disabled when `APP_ENVIRONMENT=production`; the frontend dashboard at `/dev/observability` is for local development only, **not authenticated admin access**.
+Provider and search events share a request correlation ID. They record operational metadata, retrieval and RAG timings, context count/size, generation provider/model, grounding failures, results, and token usage when available, without storing prompts by default. Telemetry writes fail open. Developer API routes under `/dev/observability` require an authenticated account whose verified email is in `AUTH_ADMIN_EMAILS`.
 
 The versioned, human-labelled evaluation under `backend/evaluation/` supports deterministic offline FTS and semantic/hybrid modes against the same checksum-pinned catalog. The `hybrid_rag` mode adds deterministic adversarial grounding checks but does not call a live text generator. Thus it does not measure generated-answer quality, live RAG latency, or provider cost. See [the evaluation guide](../backend/evaluation/README.md) and [v2.0.0 release notes](releases/v2.0.0.md).

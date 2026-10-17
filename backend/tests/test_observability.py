@@ -21,6 +21,7 @@ from fashion_search.observability.instrumentation import (
 from fashion_search.observability.pricing import PricingCatalog
 from fashion_search.observability.schemas import AIUsage
 from fashion_search.search.schemas import HybridSearchResponse
+from auth_helpers import authorize
 
 
 def settings(**overrides):
@@ -195,6 +196,7 @@ class DashboardApiTests(unittest.TestCase):
     def app(self, cfg=None):
         app = FastAPI()
         app.include_router(router)
+        authorize(app)
         if cfg:
             app.dependency_overrides[get_settings] = lambda: cfg
         return TestClient(app)
@@ -214,7 +216,7 @@ class DashboardApiTests(unittest.TestCase):
             "search": {"request_id": "abc"},
             "provider_events": [],
         }
-        client = self.app(settings())
+        client = self.app(settings(auth_admin_emails="api-test@example.com"))
         with patch("fashion_search.api.observability.repository", repo):
             summary = client.get("/dev/observability/summary?range=1h")
             providers = client.get(

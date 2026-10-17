@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -14,15 +15,20 @@ from fashion_search.shopify.mcp_client import (
     ShopifyMcpRateLimitError,
     ShopifyMcpTimeoutError,
 )
-from fashion_search.search.sessions import search_session_store
 from fashion_search.search.constraints import fallback_parse
 from fashion_search.search.schemas import SearchState
+from auth_helpers import authorize, clear_test_sessions, ensure_test_user
 
 
+@unittest.skipUnless(
+    os.environ.get("DATABASE_URL"), "DATABASE_URL required for durable sessions"
+)
 class SearchProviderApiTests(unittest.TestCase):
     def setUp(self) -> None:
+        authorize(app)
+        ensure_test_user()
         self.client = TestClient(app)
-        search_session_store.clear()
+        clear_test_sessions()
         self._initial_search_patcher = patch(
             "fashion_search.api.search.initial_search_state",
             side_effect=self._initial_state,
@@ -40,7 +46,8 @@ class SearchProviderApiTests(unittest.TestCase):
     def tearDown(self) -> None:
         self._initial_search_patcher.stop()
         self._telemetry_patcher.stop()
-        search_session_store.clear()
+        clear_test_sessions()
+        app.dependency_overrides.clear()
 
     @staticmethod
     def _initial_state(query: str) -> SearchState:

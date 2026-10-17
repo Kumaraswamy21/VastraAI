@@ -32,12 +32,16 @@ services:
   frontend:
     build:
       context: ./frontend
-      args:
-        NEXT_PUBLIC_API_URL: http://localhost:8000
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      BACKEND_API_URL: http://backend:8000
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      AUTH_ADMIN_EMAILS: ${AUTH_ADMIN_EMAILS:-}
     depends_on:
       - backend
 

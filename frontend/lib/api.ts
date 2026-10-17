@@ -176,7 +176,7 @@ export class ApiError extends Error {
 }
 
 export function apiBase(): string {
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  return "/api/backend";
 }
 
 export async function readJson<T>(response: Response): Promise<T> {

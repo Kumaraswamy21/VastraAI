@@ -1,16 +1,20 @@
 """Live product discovery through Shopify Global Catalog MCP."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from fashion_search.config.settings import get_settings
 from fashion_search.shopify.client import ShopifyMcpError, search_global_catalog
 from fashion_search.shopify.schemas import ShopifySearchRequest, ShopifySearchResponse
+from fashion_search.auth.security import current_user
+from fashion_search.catalog.models import User
 
 router = APIRouter(prefix="/search/shopify", tags=["shopify"])
 
 
 @router.post("", response_model=ShopifySearchResponse)
-def search_shopify(body: ShopifySearchRequest) -> ShopifySearchResponse:
+def search_shopify(
+    body: ShopifySearchRequest, _user: User = Depends(current_user)
+) -> ShopifySearchResponse:
     """Search live Shopify offers without storing or mixing them into local RAG."""
     settings = get_settings()
     try:
